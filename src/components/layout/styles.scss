@@ -1,0 +1,19 @@
+// FSMI brand colors
+$primary: #000f75;
+$link-color: #2c5282;
+$link-color-secondary: #63b3ed;
+
+@import "../../../node_modules/bootstrap";
+
+
+// document-selection component
+
+.documents-table {
+  .add-to-cart-button {
+    visibility: hidden;
+  }
+
+  tr:hover .add-to-cart-button {
+    visibility: visible;
+  }
+}

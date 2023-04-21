@@ -1,0 +1,1410 @@
+type AccountingPosition {
+  id: AccountingPositionId!
+  name: String!
+}
+
+"""format: UUID string representation"""
+scalar AccountingPositionId
+
+type Actor {
+  permissions: [Permission!]!
+  user: User
+}
+
+type Config {
+  currency: CurrencyConfig!
+  documents: DocumentsConfig!
+  price: PriceConfig!
+  printers: [Printer!]!
+  siteName: String!
+}
+
+union CreateDepositResult = GeneralError | InvalidIdError | StringTooLargeError | Transaction
+
+union CreateExaminerResult = Examiner | GeneralError | StringTooLargeError
+
+union CreateOrderResult = GeneralError | InvalidIdError | Order | StringTooLargeError
+
+type Credentials {
+  permissions: [Permission!]!
+  token: String!
+  user: User!
+}
+
+type CurrencyConfig {
+  code: String!
+  minorDigits: Int!
+  symbol: String!
+}
+
+"""format: opaque"""
+scalar Cursor
+
+"""Different kinds of data that can be referenced in the API."""
+enum DataKind {
+  ACCOUNTING_POSITION
+  DEPOSIT
+  DOCUMENT
+  EXAMINER
+  FACULTY
+  LECTURE
+  ORDER
+  PRINTER
+  UPLOAD
+}
+
+"""Date (isoformat)"""
+scalar Date
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+"""A deposit entry for oral exams."""
+type Deposit {
+  comment: String
+  created: DateTime!
+  id: DepositId!
+  lectures: [Lecture!]!
+
+  """The identifier that is entered by the user."""
+  tag: String!
+  value: Money!
+}
+
+type DepositCursor {
+  cursor: Cursor
+  results: [Deposit!]!
+
+  """Number of available results (starting with the first result)."""
+  totalAvailable: Int!
+}
+
+"""
+Defines a filter for deposits. The fields have OR semantic, i.e. all
+elements that satisfy any of the specified fields are returned.
+At least one field must be present.
+"""
+input DepositFilter {
+  createdAfter: DateTime
+  createdBefore: DateTime
+
+  """Any deposit where one of its lectures is in this list."""
+  lectureIds: [LectureId!]
+
+  """Any deposit where the tag matches the given pattern."""
+  tag: String
+}
+
+"""format: UUID string representation"""
+scalar DepositId
+
+input DepositInput {
+  comment: String
+  lectureIds: [LectureId!]!
+  tag: String!
+}
+
+"""
+Documents are the central data type of Squeak.
+
+A documents usually corresponds to an exam. An exam has an associated date,
+semester, faculty, examiner(s) and lecture (in some cases, an exam can
+even belong to multiple lectures). Apart from that, each document has
+additional associated data (see the respective field documentation).
+
+Note that as an interface Document is not instantiated itself,
+but only its subclasses.
+"""
+interface Document {
+  date: Date!
+
+  """Whether the file is publicly downloadable without permissions."""
+  downloadable: Boolean!
+  examiners: [Examiner!]!
+  faculty: Faculty!
+
+  """
+  Associated PDF file (might not exist yet).
+  
+  The file is also None if the document is not downloadable and
+  the user doesn't have special permission to download it.
+  """
+  file: Url
+  id: DocumentId!
+  internalComment: String
+  lastUpdated: DateTime!
+  lectures: [Lecture!]!
+
+  """Number of pages of associated file."""
+  numPages: Int
+
+  """
+  If not public, the object is only accessible by
+  users with the necessary permissions.
+  """
+  public: Boolean!
+  publicComment: String
+  publishedOn: Date
+
+  """Rating for student-created documents."""
+  rating: Rating!
+  semester: Semester!
+  type: DocumentType!
+
+  """
+  True if all associated lectures and examiners are validated. A
+  document must be validated before it can be published.
+  """
+  validated: Boolean!
+}
+
+type DocumentCursor {
+  cursor: Cursor
+  results: [Document!]!
+
+  """Number of available results (starting with the first result)."""
+  totalAvailable: Int!
+}
+
+"""
+Defines a filter for documents. The fields have OR semantic, i.e. all
+elements that satisfy any of the specified fields are returned.
+At least one field must be present.
+
+Note that time/date ranges are inclusive.
+"""
+input DocumentFilter {
+  documentType: [DocumentType!]
+
+  """Whether the file is publicly downloadable without permissions."""
+  downloadable: Boolean
+  examAfter: Date
+  examBefore: Date
+
+  """Any document where one of its examiners is in this list."""
+  examinerIds: [ExaminerId!]
+  faculty: FacultyId
+  id: DocumentId
+
+  """Any document where one of its lectures is in this list."""
+  lectureIds: [LectureId!]
+
+  """Whether the document is publicly visible."""
+  public: Boolean
+  publishedAfter: Date
+  publishedBefore: Date
+  rating: [Rating!]
+
+  """Only applied to documents with an associated exam request."""
+  requestState: [RequestState!]
+  semesterAfter: Semester
+  semesterBefore: Semester
+
+  """Only applied to documents with an associated upload."""
+  uploadState: [UploadState!]
+
+  """Applied to WrittenExams only."""
+  writtenSolutionType: [SolutionType!]
+}
+
+"""format: UUID string representation"""
+scalar DocumentId
+
+"""Union of possible values of WrittenExamType and OralExamType."""
+enum DocumentType {
+  ORAL_EXAM
+  ORAL_REEXAM
+  WRITTEN_EXAM
+  WRITTEN_MOCK
+}
+
+"""
+A document that is uploaded by a user (e.g. a transcript of an oral exam).
+The quality of uploads should be checked before accepting them, which is
+represented by the "state" field that allows to either accept or reject an
+upload.
+
+Note: It is guaranteed that the associated document of an upload always
+has a non-null file (assuming the correct permissions).
+"""
+type DocumentUpload {
+  created: DateTime!
+
+  """
+  The associated deposit, or null if none is specified.
+  
+  This is intended to be set by the creator of the upload, and thus can
+  be expected to be the correct deposit for this upload.
+  """
+  deposit: Deposit
+
+  """True if a deposit might be returned for this upload."""
+  depositAvailable: Boolean!
+  document: Document!
+  id: UploadId!
+
+  """True if a reward may be paid out for this upload."""
+  rewardAvailable: Boolean!
+  state: UploadState!
+
+  """
+  The identifier that is entered by the user,
+  or null if the upload is anonymous.
+  """
+  tag: String
+}
+
+type DocumentsConfig {
+  """Document types that are allowed for uploads."""
+  allowedUploadTypes: [DocumentType!]!
+}
+
+"""
+Common interface for all error types in the GQL API. Usually, mutations
+return an union of all possible errors for the endpoint, where each error
+implements this interface. The `errorCode` field is used to specify the
+exact kind of error that occurred. Additionally, a message is provided
+that describes the error. Generally, clients should map the error code to
+a client-defined message they want to display to the user. However,
+the provided message can be used as a fallback in case the client does not
+know the error code.
+
+Important note for clients:
+This interface allows to add a catch-all when querying the return value of
+a mutation, by adding "... on Error { ... }" to the query. Because the set
+of possible errors might change in the future, it is recommandable to do
+this for all queries (instead of e.g. querying `GeneralError`).
+"""
+interface Error {
+  errorCode: String!
+  msg: String!
+}
+
+"""
+A request for an exam (e.g. towards the examiner). The state is used to
+track the progress from the initial request until publication.
+
+Contains the requested document. Depending on the state of the request,
+the file of the document might be null.
+"""
+type ExamRequest {
+  created: DateTime!
+  document: Document!
+  id: RequestId!
+  state: RequestState!
+}
+
+type ExamRequestCursor {
+  cursor: Cursor
+  results: [ExamRequest!]!
+
+  """Number of available results (starting with the first result)."""
+  totalAvailable: Int!
+}
+
+"""
+Defines a filter for exam requests. The fields have OR semantic, i.e. all
+elements that satisfy any of the specified fields are returned.
+At least one field must be present.
+
+It is possible to filter by document data via the according field.
+"""
+input ExamRequestFilter {
+  createdAfter: DateTime
+  createdBefore: DateTime
+
+  """Applies the filter to the associated document of the exam request."""
+  document: DocumentFilter
+  state: [RequestState!]
+}
+
+type Examiner {
+  """Combines prename, surname and institute (if available)."""
+  displayName: String!
+  id: ExaminerId!
+  institute: String
+  name: String!
+  prename: String
+  validated: Boolean!
+}
+
+"""format: UUID string representation"""
+scalar ExaminerId
+
+input ExaminerInput {
+  institute: String
+  name: String!
+  prename: String
+}
+
+"""Represents the faculty where a lecture is located."""
+type Faculty {
+  displayName: String!
+  id: FacultyId!
+}
+
+"""format: UUID string representation"""
+scalar FacultyId
+
+"""The uploaded file is too large and thus rejected by the server."""
+type FileTooLargeError implements Error {
+  errorCode: String!
+
+  """Maximum allowed file size in kilobytes."""
+  maximumFileSize: Int!
+  msg: String!
+}
+
+"""General error without specific fields."""
+type GeneralError implements Error {
+  errorCode: String!
+  msg: String!
+}
+
+"""This error occurs if a provided UUID is not known to the server."""
+type InvalidIdError implements Error {
+  """
+  Describes the kind of data referenced by the invalid UUID
+  (e.g. a document).
+  """
+  dataKind: DataKind!
+  errorCode: String!
+
+  """The offending UUID."""
+  invalidId: UUID!
+  msg: String!
+}
+
+"""
+Lecture to which an exam belongs.
+
+A lecture can have multiple aliases (to simplify searching for it)
+and a comment that is shown publicly for this lecture.
+"""
+type Lecture {
+  aliases: [String!]!
+
+  """
+  Returns all document types for which a reward is currently available
+  for this lecture.
+  """
+  availableRewards: [DocumentType!]!
+  comment: String
+  displayName: String!
+  faculty: Faculty!
+  id: LectureId!
+  validated: Boolean!
+}
+
+"""format: UUID string representation"""
+scalar LectureId
+
+input LectureInput {
+  comment: String
+  facultyId: FacultyId!
+  name: String!
+}
+
+union LectureResult = GeneralError | InvalidIdError | Lecture | StringTooLargeError
+
+union LoginResult = Credentials | GeneralError
+
+"""
+format: Int (signed)
+unit: Thousandth of a minor currency unit
+"""
+scalar Money
+
+type Mutation {
+  """
+  Creates a new deposit. At least one associated lecture must be
+  provided. Optionally, the associated order and a comment can be
+  specified. Also, an according monetary transaction is recorded.
+  
+  Note that this endpoint is not intended to be used in regular
+  operation. The intention is to allow creating a deposit that was
+  missing from the original print request.
+  
+  Returns the new transaction or an according error.
+  
+  Possible errors:
+    EMPTY_TAG, NO_LECTURE_PROVIDED, INVALID_ID, DUPLICATE_ID, STRING_TOO_LARGE
+  """
+  createDeposit(accountingPositionId: AccountingPositionId!, data: DepositInput!): CreateDepositResult!
+
+  """
+  Creates a new examiner. The name may not be empty and the combination
+  of prename, name and institute must be unique.
+  
+  Returns the created examiner or an according error.
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME
+  """
+  createExaminer(data: ExaminerInput!, validated: Boolean! = true): CreateExaminerResult!
+
+  """
+  Creates a new lecture. A valid faculty id must be provided. The name
+  may not be empty and must be different to already existing lectures.
+  
+  Returns the created lecture or an according error.
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
+  """
+  createLecture(data: LectureInput!, validated: Boolean! = true): LectureResult!
+
+  """
+  Creates a new order with the specified tag containing the documents
+  with the provided ids. The order must not be empty, i.e. at least one
+  document must be provided.
+  
+  Returns the created order or an according error.
+  
+  Possible errors:
+    EMPTY_TAG, STRING_TOO_LARGE, NO_DOCUMENT_PROVIDED, INVALID_ID, DUPLICATE_ID
+  """
+  createOrder(documents: [DocumentId!]!, tag: String): CreateOrderResult!
+
+  """
+  Creates a new examiner that is not yet validated. The name may not
+  be empty and the combination of prename, name and institute must be
+  unique.
+  
+  Returns the created examiner or an according error.
+  
+  Note: This endpoint is more restricted, but can be used with less
+  permissions than "createExaminer".
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME
+  """
+  createUnvalidatedExaminer(institute: String = null, name: String!, prename: String = null): CreateExaminerResult!
+
+  """
+  Creates a new lecture that is not yet validated. A valid faculty id
+  must be provided. The name may not be empty and must be different
+  to already existing lectures.
+  
+  Returns the created lecture or an according error.
+  
+  Note: This endpoint is more restricted, but can be used with less
+  permissions than "createLecture".
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
+  """
+  createUnvalidatedLecture(facultyId: FacultyId!, name: String!): LectureResult!
+
+  """
+  Creates a new document upload that is assigned to the specified
+  deposit. The document is initialized with the provided data and file.
+  In the data, at least one lecture and at least one examiner must be
+  provided. The file must be a valid PDF. Further, the server might
+  restrict which document types are allowed for uploads (see
+  config.documents).
+  
+  Returns the created upload or an according error.
+  
+  This endpoint only allows to specify a restricted subset of the
+  available attributes of a document, while the remainder is set by
+  the server as fitting for a newly created upload.
+  
+  Possible errors:
+    NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
+    FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
+    DEPOSIT_ALREADY_REFERENCED
+  """
+  createUploadForDeposit(data: RestrictedDocumentInput!, depositId: DepositId!, file: Upload!): UploadResult!
+
+  """
+  Creates a new document upload that uses the specified tag for
+  assigning the upload to a deposit. If no tag is provided, an anonymous
+  upload is created. The document is initialized with the provided data
+  and file. In the data, at least one lecture and at least one examiner
+  must be provided. The file must be a valid PDF. Further, the server
+  might restrict which document types are allowed for uploads (see
+  config.documents).
+  
+  Returns the created upload or an according error.
+  
+  This endpoint only allows to specify a restricted subset of the
+  available attributes of a document, while the remainder is set by
+  the server as fitting for a newly created upload.
+  
+  Possible errors:
+    EMPTY_TAG, NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID,
+    DUPLICATE_ID, STRING_TOO_LARGE, FILE_TOO_LARGE, PDF_PROCESSING,
+    INVALID_TYPE_FOR_UPLOAD
+  """
+  createUploadForTag(data: RestrictedDocumentInput!, file: Upload!, tag: String): UploadWithTagResult!
+
+  """
+  Tries to authenticate the user by using the configured authentication
+  provider. If successful, a JSON Web Token (JWT) containing username,
+  display name and permissions is generated.
+  
+  Returns the credentials (JWT and user info) or an according error.
+  
+  Possible errors:
+    INTERNAL_AUTHENTICATION, INVALID_CREDENTIALS
+  """
+  login(password: String!, username: String!): LoginResult!
+
+  """
+  Payout of a reward. A reward is always tied to an upload and available
+  only once for each upload (and only if permitted by the reward policy
+  of the server). Also creates an according transaction.
+  
+  If the state of the upload is REJECTED, the server will per default
+  return an error. This can be ignored by setting "force" to true.
+  Note that clients should only use this option after displaying an
+  explicit warning to the user.
+  
+  Returns the created transaction or an according error.
+  
+  Possible errors:
+    INVALID_ID, REWARD_INVALID
+  """
+  payoutReward(accountingPositionId: AccountingPositionId!, force: Boolean! = false, uploadId: UploadId!): ReturnDepositResult!
+
+  """
+  Prints the given list of documents. In addition, the endpoint allows to
+  specify deposits that are created (via the lectures of each deposit)
+  as well as a (positive) donation. To ensure that the price displayed by
+  the client is correct, the total price must be specified
+  (i.e., printing + deposits + donation) and an error is returned if the
+  price is incorrect. Clients can either calculate the price themselves
+  with the values in config.price or use the "price" endpoint.
+  
+  Depending on the configuration, the server per default prints a
+  frontpage before the documents are printed. The client can explicitly
+  request that no frontpage is printed using the according flag.
+  
+  The tag is used for the created deposits and possibly printed on the
+  frontpage. Further, a valid combination of a printer and an accounting
+  position must be specified (see config.printers).
+  
+  Note that it is not possible to print a document multiple times. At
+  least one document must be provided and a file must be available for
+  each of the documents.
+  
+  One transaction is created for the printing, one for each of the
+  deposits and one for the donation (if not zero). Returns a list of the
+  created transactions or an according error.
+  
+  Possible errors:
+    EMPTY_TAG, NO_DOCUMENT_PROVIDED, NO_LECTURE_PROVIDED, INVALID_ID,
+    DUPLICATE_ID, STRING_TOO_LARGE, ACCOUNTING_POSITION_NOT_AVAILABLE,
+    INCORRECT_PRICE, FILE_DOES_NOT_EXIST, PRINTER_UNAVAILABLE
+  """
+  printDocuments(accountingPositionId: AccountingPositionId!, deposits: [[LectureId!]!]!, documentList: [DocumentId!]!, donation: Money! = 0, printFrontpage: Boolean! = true, printerId: PrinterId!, tag: String!, totalPrice: Money!): PrintResult!
+
+  """
+  Records an accounting correction, i.e. a correction of a previous
+  incorrect transaction. Accounting corrections only relate to printing
+  (not deposits or exams). Note that it should generally be preferred to
+  undo a transaction; accounting corections should only be used if this
+  is not possible.
+  
+  Returns the new transaction or an according error.
+  
+  Possible errors:
+    INVALID_MONETARY_VALUE
+  """
+  recordAccountingCorrection(accountingPositionId: AccountingPositionId!, amount: Money!): TransactionResult!
+
+  """
+  Records a donation. Both positive amount (revenue) and negative amount
+  (expenditure) are supported.
+  
+  Returns the new transaction or an according error.
+  
+  Possible errors:
+    INVALID_MONETARY_VALUE
+  """
+  recordDonation(accountingPositionId: AccountingPositionId!, amount: Money!): TransactionResult!
+
+  """
+  Payout of a deposit. That includes deleting the deposit as well as
+  recording an appropriate transaction for the specified accounting
+  position. If an upload is specified, it is updated to indicate that
+  the deposit was returned.
+  
+  This endpoint performs a number of sanity checks and returns an error
+  if any check fails:
+   - If a deposit is directly referenced by an upload, it can only be
+     returned in combination with the referencing upload and vice versa.
+   - For each upload, a deposit can be returned only once.
+   - Per default, an upload must be specified and the state of the
+     upload may not be REJECTED.
+  
+  The last check can be ignored by setting "force" to true. However,
+  in order to avoid errors clients should only use this option after
+  displaying an explicit warning to the user.
+  
+  Returns the created transaction or an according error.
+  
+  Possible errors:
+    INVALID_ID, DEPOSIT_RETURN_INVALID, UPLOAD_DEPOSIT_MISMATCH
+  """
+  returnDeposit(accountingPositionId: AccountingPositionId!, depositId: DepositId!, force: Boolean! = false, uploadId: UploadId): ReturnDepositResult!
+
+  """
+  Undo the transaction with the specified id.
+  
+  This has two effects:
+  First, a new transaction with the inversed monetary value is created,
+  such that the balance of the cashbox is restored.
+  Second, any state changes related to the transaction are undone (e.g.
+  a deposit that was returned by the transaction is restored).
+  
+  The new transaction is also undoable using this endpoint (and so on).
+  However, each transaction can be undone only once. It is possible that
+  undoing fails because the data to restore the previous state is no
+  longer available (e.g. the associated upload was deleted).
+  
+  Returns the new transaction or an according error.
+  
+  Possible errors:
+    DOUBLE_UNDO, UNDO_TRANSACTION_FAILED
+  """
+  undoTransaction(transactionId: TransactionId!): TransactionResult!
+
+  """
+  Updates the data of the specified, already existing, deposit. The
+  data is subject to the same restrictions as if creating a new deposit.
+  
+  The lectures of the deposit are not preserved but fully replaced.
+  
+  Returns the updated deposit or an according error.
+  
+  Possible errors:
+    EMPTY_TAG, NO_LECTURE_PROVIDED, INVALID_ID, DUPLICATE_ID, STRING_TOO_LARGE
+  """
+  updateDeposit(data: DepositInput!, depositId: DepositId!): UpdateDepositResult!
+
+  """
+  Updates the data of the specified, already existing, examiner. The
+  data is subject to the same restrictions as if creating a new
+  examiner.
+  
+  Returns the updated examiner or an according error.
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
+  """
+  updateExaminer(data: ExaminerInput!, examinerId: ExaminerId!): UpdateExaminerResult!
+
+  """
+  Updates the data of the specified, already existing, lecture. The
+  data is subject to the same restrictions as if creating a new lecture.
+  
+  Returns the updated lecture or an according error.
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
+  """
+  updateLecture(data: LectureInput!, lectureId: LectureId!): LectureResult!
+
+  """
+  Updates the aliases of the specified, already existing, lecture. Per
+  default, the new aliases are added to the existing aliases.
+  Alternatively, the existing aliases can be removed. Aliases must
+  be different from each other and from already existing lectures.
+  
+  Returns the updated lecture or an according error.
+  
+  Possible errors:
+    EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
+  """
+  updateLectureAliases(aliases: [String!]!, lectureId: LectureId!, removeExisting: Boolean! = false): LectureResult!
+
+  """
+  Updates the documents of the specified, already existing, order. The
+  current documents are replaced with the provided list, which must
+  contain at least one document id.
+  
+  Returns the updated order or an according error.
+  
+  Possible errors:
+    NO_DOCUMENT_PROVIDED, INVALID_ID, DUPLICATE_ID
+  """
+  updateOrderDocuments(documents: [DocumentId!]!, orderId: OrderId!): UpdateOrderResult!
+
+  """
+  Updates the data and/or file of the specified, already existing,
+  upload. Both data and file may be null (and are not changed in this
+  case). Accordingly, clients should not upload a file if they only want
+  to change the data of the upload. Both the data and the file are
+  subject to same restrictions as if creating a new upload.
+  
+  This will always reset the state of the upload to PENDING. Further, the
+  update is rejected if the associated document is already published.
+  
+  Note: The endpoint is intended for users to update uploads created by
+  themselves. For general purpose document editing, "updateDocumentData"
+  should be used instead.
+  
+  Returns the updated upload or an according error.
+  
+  Possible errors:
+    NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
+    FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
+    UPLOAD_ALREADY_PUBLISHED
+  """
+  updateUploadData(data: RestrictedDocumentInput = null, file: Upload = null, uploadId: UploadId!): UploadResult!
+
+  """
+  Reassigns the specified, already existing, upload by providing a new
+  associated deposit. Note that this is intended to be used only by the
+  creator of the upload, such that the associated deposit can (mostly)
+  be guaranteed to be correct.
+  
+  Returns the updated upload or an according error.
+  
+  Possible errors:
+    INVALID_ID, DEPOSIT_ALREADY_REFERENCED
+  """
+  updateUploadDeposit(depositId: DepositId!, uploadId: UploadId!): UpdateUploadDepositResult!
+
+  """
+  Reassigns the specified, already existing, upload by providing a new
+  tag. If the tag is null, the upload is set to anonymous.
+  
+  Returns the updated upload or an according error.
+  
+  Possible errors:
+    EMPTY_TAG, INVALID_ID, STRING_TOO_LARGE
+  """
+  updateUploadTag(tag: String, uploadId: UploadId!): UpdateUploadTagResult!
+
+  """
+  Validates the specified, already existing, examiner. This is a no-op
+  if the examiner is already validated.
+  
+  Returns the examiner or an error if the examiner does not exist.
+  
+  Note: Validation can not be undone.
+  
+  Possible errors:
+    INVALID_ID
+  """
+  validateExaminer(examinerId: ExaminerId!): ValidateExaminer!
+
+  """
+  Validates the specified, already existing, lecture. This is a no-op
+  if the lecture is already validated.
+  
+  Returns the lecture or an error if the lecture does not exist.
+  
+  Note: Validation can not be undone.
+  
+  Possible errors:
+    INVALID_ID
+  """
+  validateLecture(lectureId: LectureId!): ValidateLecture!
+}
+
+"""
+An oral exam.
+
+Usually, this is a transcript written from memory by a student.
+"""
+type OralExam implements Document {
+  date: Date!
+
+  """Whether the file is publicly downloadable without permissions."""
+  downloadable: Boolean!
+  examiners: [Examiner!]!
+  faculty: Faculty!
+
+  """
+  Associated PDF file (might not exist yet).
+  
+  The file is also None if the document is not downloadable and
+  the user doesn't have special permission to download it.
+  """
+  file: Url
+  id: DocumentId!
+  internalComment: String
+  lastUpdated: DateTime!
+  lectures: [Lecture!]!
+
+  """Number of pages of associated file."""
+  numPages: Int
+  oralType: OralExamType!
+
+  """
+  If not public, the object is only accessible by
+  users with the necessary permissions.
+  """
+  public: Boolean!
+  publicComment: String
+  publishedOn: Date
+
+  """Rating for student-created documents."""
+  rating: Rating!
+  semester: Semester!
+  type: DocumentType!
+
+  """
+  True if all associated lectures and examiners are validated. A
+  document must be validated before it can be published.
+  """
+  validated: Boolean!
+}
+
+"""An enumeration."""
+enum OralExamType {
+  EXAM
+
+  """
+  An oral exam that provides a last chance for passing an exam
+  that is otherwise written.
+  """
+  REEXAM
+}
+
+"""
+An order consists of a set of documents selected by the user.
+
+The user enters a tag (identifier) for the order. Afterwards, an order
+is paid by the user and then printed. This is represented by the state
+of the order.
+"""
+type Order {
+  created: DateTime!
+  documents: [Document!]!
+  examiners: [Examiner!]!
+  id: OrderId!
+  lectures: [Lecture!]!
+  numPages: Int!
+
+  """The current price for the order."""
+  price(numOralExamDeposits: Int! = 0): Money!
+  state: OrderState!
+
+  """The identifier that is entered by the user."""
+  tag: String
+}
+
+type OrderCursor {
+  cursor: Cursor
+  results: [Order!]!
+
+  """Number of available results (starting with the first result)."""
+  totalAvailable: Int!
+}
+
+"""
+Defines a filter for orders. The fields have OR semantic, i.e. all
+elements that satisfy any of the specified fields are returned.
+At least one field must be present.
+"""
+input OrderFilter {
+  createdAfter: DateTime
+  createdBefore: DateTime
+
+  """Any order where one of its examiners is in this list."""
+  examinerIds: [ExaminerId!]
+
+  """Any order where one of its lectures is in this list."""
+  lectureIds: [LectureId!]
+  state: [OrderState!]
+
+  """Any order where the tag matches the given pattern."""
+  tag: String
+
+  """Whether the tag is null."""
+  tagIsPresent: Boolean
+}
+
+"""format: UUID string representation"""
+scalar OrderId
+
+"""An enumeration."""
+enum OrderState {
+  PAID
+  PENDING
+  PRINTED
+}
+
+"""Set of available permissions for users."""
+enum Permission {
+  ACCESS_INTERNAL_DOCUMENT_DATA
+  CREATE_DATA
+  CREATE_DEPOSITS
+  CREATE_ORDERS
+  CREATE_UNVALIDATED_DATA
+  CREATE_UPLOADS
+  PAYOUT_REWARDS
+  PRINT_DOCUMENTS
+  QUERY_DEPOSITS
+  QUERY_DEPOSITS_BY_ID
+  QUERY_DOCUMENTS
+  QUERY_DOCUMENTS_BY_ID
+  QUERY_NON_PUBLIC_DOCUMENTS
+  QUERY_ORDERS
+  QUERY_ORDERS_BY_ID
+  QUERY_PRICE
+  QUERY_REQUESTS
+  QUERY_REQUESTS_BY_ID
+  QUERY_UPLOADS
+  QUERY_UPLOADS_BY_ID
+  RECORD_TRANSACTIONS
+  RETURN_DEPOSITS
+  UNDO_TRANSACTIONS
+  UPDATE_DATA
+  UPDATE_DEPOSITS
+  UPDATE_ORDERS
+  UPDATE_UPLOADS
+  VALIDATE_DATA
+}
+
+type PriceConfig {
+  perDocument: Money!
+
+  """Price of deposit that is taken for transcripts of oral exams."""
+  perOralExamDeposit: Money!
+  perOrder: Money!
+  perPage: Money!
+  roundingMode: RoundingMode!
+
+  """We round to a multiple of this value."""
+  roundingTarget: Money!
+}
+
+"""Returned by print endpoints if the provided price is wrong."""
+type PriceError implements Error {
+  correctPrice: Money!
+  errorCode: String!
+  msg: String!
+}
+
+union PrintResult = GeneralError | InvalidIdError | PriceError | StringTooLargeError | TransactionList
+
+type Printer {
+  """Accounting positions that can be used with this printer."""
+  accountingPositions: [AccountingPosition!]!
+  id: PrinterId!
+  name: String!
+}
+
+"""format: UUID string representation"""
+scalar PrinterId
+
+type Query {
+  config: Config!
+
+  """
+  Returns all deposits that satisfy every specified filter in the given
+  list. The returned deposits are sorted by time of creation
+  (newest first).
+  
+  The endpoint is paginated, i.e. it returns at most 100 results at once.
+  If there are more values available, the result contains a cursor object
+  that can be used to query subsequent values. The client can
+  additionally provide a number to further limit the number of returned
+  results.
+  """
+  deposits(count: Int! = 100, cursor: Cursor = null, filters: [DepositFilter!]!): DepositCursor!
+
+  """
+  Returns the deposits with the specified ids. If no deposit
+  with that id exists, the corresponding entry in the list is null.
+  """
+  depositsById(ids: [DepositId!]!): [Deposit]!
+
+  """
+  Returns all documents that satisfy every specified filter in the given
+  list. The returned documents are sorted by exam date (recent first).
+  
+  Filters that are specific to the type of the document (e.g.
+  writtenSolutionType) don't affect documents of another type.
+  
+  The endpoint is paginated, i.e. it returns at most 100 results at once.
+  If there are more values available, the result contains a cursor object
+  that can be used to query subsequent values. The client can
+  additionally provide a number to further limit the number of returned
+  results.
+  
+  Note that without special permissions, only public documents are
+  returned.
+  """
+  documents(count: Int! = 100, cursor: Cursor = null, filters: [DocumentFilter!]!): DocumentCursor!
+
+  """
+  Returns the documents with the specified ids. If no document
+  with that id exists, the corresponding entry in the list is null.
+  """
+  documentsById(ids: [DocumentId!]!): [Document]!
+
+  """
+  Returns all exam requests that satisfy every specified filter in the
+  given list. The returned exam requests are sorted by time of creation
+  (newest first).
+  
+  The endpoint is paginated, i.e. it returns at most 100 results at once.
+  If there are more values available, the result contains a cursor object
+  that can be used to query subsequent values. The client can
+  additionally provide a number to further limit the number of returned
+  results.
+  """
+  examRequests(count: Int! = 100, cursor: Cursor = null, filters: [ExamRequestFilter!]!): ExamRequestCursor!
+
+  """
+  Returns the exam requests with the specified ids. If no request
+  with that id exists, the corresponding entry in the list is null.
+  """
+  examRequestsById(ids: [RequestId!]!): [ExamRequest]!
+
+  """
+  Returns a list of all available examiners. It is possible to filter
+  for examiners that are (not) validated. With null, no filter is
+  applied.
+  """
+  examiners(validated: Boolean = true): [Examiner!]!
+
+  """Returns a list of all available faculties."""
+  faculties: [Faculty!]!
+
+  """
+  Returns a list of all available lectures. It is possible to filter for
+  lectures that are (not) validated. With null, no filter is applied.
+  """
+  lectures(validated: Boolean = true): [Lecture!]!
+  me: Actor!
+
+  """
+  Returns all orders that satisfy every specified filter in the given
+  list. The returned orders are sorted by time of creation
+  (newest first).
+  
+  The endpoint is paginated, i.e. it returns at most 100 results at once.
+  If there are more values available, the result contains a cursor object
+  that can be used to query subsequent values. The client can
+  additionally provide a number to further limit the number of returned
+  results.
+  """
+  orders(count: Int! = 100, cursor: Cursor = null, filters: [OrderFilter!]!): OrderCursor!
+
+  """
+  Returns the orders with the specified ids. If no order
+  with that id exists, the corresponding entry in the list is null.
+  """
+  ordersById(ids: [OrderId!]!): [Order]!
+
+  """
+  Calculates the price for printing the specified list of documents.
+  Also, a number of deposits can be added to the price.
+  
+  Returns the price or null, if one of the ids is invalid.
+  """
+  price(documents: [DocumentId!]!, numOralExamDeposits: Int! = 0): Money
+
+  """
+  Returns all uploads that satisfy every specified filter in the given
+  list. The returned uploads are sorted by time of creation
+  (newest first).
+  
+  The endpoint is paginated, i.e. it returns at most 100 results at once.
+  If there are more values available, the result contains a cursor object
+  that can be used to query subsequent values. The client can
+  additionally provide a number to further limit the number of returned
+  results.
+  """
+  uploads(count: Int! = 100, cursor: Cursor = null, filters: [UploadFilter!]!): UploadCursor!
+
+  """
+  Returns the uploads with the specified ids. If no upload
+  with that id exists, the corresponding entry in the list is null.
+  """
+  uploadsById(ids: [UploadId!]!): [DocumentUpload]!
+}
+
+"""
+A rating of a student-created document
+(e.g. for a transcript of an oral exam).
+"""
+enum Rating {
+  """Transcripts of oral exams with particularly high quality."""
+  EXCELLENT
+
+  """
+  Unofficial solutions for written exams that could be improved,
+  or transcripts of oral exams with low quality.
+  """
+  NEEDS_IMPROVEMENT
+
+  """Default rating."""
+  NEUTRAL
+}
+
+"""format: UUID string representation"""
+scalar RequestId
+
+"""States from requesting to publishing a written exam."""
+enum RequestState {
+  """Exam is layouted and publicly available."""
+  DONE
+
+  """Exam will or has taken place."""
+  NEW
+
+  """The examiner doesn't want to provide the exam."""
+  REJECTED
+
+  """Document was requested from the examiner."""
+  REQUESTED
+
+  """
+  The exam was received, but it is not layouted yet.
+  The original might still be public anyway.
+  """
+  TODO
+}
+
+"""
+Input for creating documents with restricted permissions.
+The writtenExamData field must be present if and only if the type is a
+written exam.
+"""
+input RestrictedDocumentInput {
+  date: Date!
+  examinerIds: [ExaminerId!]!
+  lectureIds: [LectureId!]!
+  semester: Semester!
+  type: DocumentType!
+  writtenExamData: WrittenExamData
+}
+
+union ReturnDepositResult = GeneralError | InvalidIdError | Transaction
+
+"""
+Available Rounding Modes.
+New modes might be added, so a client must handle the case, that it doesn't
+know about a rounding mode.
+"""
+enum RoundingMode {
+  AWAY_FROM_ZERO
+  HALF_AWAY_FROM_ZERO
+  TOWARDS_ZERO
+}
+
+"""format: (WS|SS) ?(\d{2}|\d{4})"""
+scalar Semester
+
+"""An enumeration."""
+enum SolutionType {
+  NONE
+  OFFICIAL
+  UNOFFICIAL
+}
+
+"""This error occurs if a provided string is longer than allowed."""
+type StringTooLargeError implements Error {
+  errorCode: String!
+
+  """Maximum allowed number of chars for this input."""
+  maximumNumChars: Int!
+  msg: String!
+}
+
+"""
+A monetary transaction recorded for accounting. Once recorded, a
+transaction can not be modified. If a transaction needs to be undone,
+this can be achieved via a new (cancellation) transaction.
+"""
+type Transaction {
+  """Tag of the order or deposit that is associated to the transaction."""
+  associatedTag: String
+  id: TransactionId!
+
+  """
+  If the transaction is deposit taken/returned, contains the lectures
+  associated to the deposit. This might be useful to distinguish
+  between multiple deposits associated to the same order.
+  """
+  lectures: [Lecture!]
+  timestamp: DateTime!
+  transactionType: TransactionType!
+
+  """
+  The monetary value of the transaction. A positive sign represents
+  revenue, a negative sign represents expenditure.
+  """
+  value: Money!
+}
+
+"""format: UUID string representation"""
+scalar TransactionId
+
+"""
+A list of transactions. Needed for endpoints that return either multiple
+transaction or an error, as lists can not be used directly in GQL unions.
+"""
+type TransactionList {
+  transactions: [Transaction!]!
+}
+
+union TransactionResult = GeneralError | Transaction
+
+"""
+Different categories a transaction can belong to. Determines e.g.
+whether taxes are applied.
+"""
+enum TransactionType {
+  ACCOUNTING_CORRECTION
+  DEPOSIT_RETURNED
+  DEPOSIT_TAKEN
+  DONATION
+  EXAM_PRINTED
+  REWARD
+}
+
+scalar UUID
+
+union UpdateDepositResult = Deposit | GeneralError | InvalidIdError | StringTooLargeError
+
+union UpdateExaminerResult = Examiner | GeneralError | InvalidIdError | StringTooLargeError
+
+union UpdateOrderResult = GeneralError | InvalidIdError | Order
+
+union UpdateUploadDepositResult = DocumentUpload | GeneralError | InvalidIdError
+
+union UpdateUploadTagResult = DocumentUpload | GeneralError | InvalidIdError | StringTooLargeError
+
+scalar Upload
+
+type UploadCursor {
+  cursor: Cursor
+  results: [DocumentUpload!]!
+
+  """Number of available results (starting with the first result)."""
+  totalAvailable: Int!
+}
+
+"""
+Defines a filter for uploads. The fields have OR semantic, i.e. all
+elements that satisfy any of the specified fields are returned.
+At least one field must be present.
+
+It is possible to filter by document data via the according field.
+"""
+input UploadFilter {
+  createdAfter: DateTime
+  createdBefore: DateTime
+  depositAvailable: Boolean
+
+  """Applies the filter to the associated document of the upload."""
+  document: DocumentFilter
+  rewardAvailable: Boolean
+  state: [UploadState!]
+
+  """Any upload where the tag matches the given pattern."""
+  tag: String
+
+  """Whether the tag is null."""
+  tagIsPresent: Boolean
+}
+
+"""format: UUID string representation"""
+scalar UploadId
+
+union UploadResult = DocumentUpload | FileTooLargeError | GeneralError | InvalidIdError
+
+"""
+Used to purport whether deposit and/or reward can be paid out. Note that
+this is orthogonal to whether an upload is published, i.e. an upload might
+not be published even if approved.
+"""
+enum UploadState {
+  """Upload was checked and the deposit (or reward) can be returned."""
+  APPROVED
+
+  """Document was uploaded by a student, but it is not checked yet."""
+  PENDING
+
+  """Upload was checked and the deposit should _not_ be returned."""
+  REJECTED
+}
+
+union UploadWithTagResult = DocumentUpload | FileTooLargeError | GeneralError | InvalidIdError | StringTooLargeError
+
+"""format: RFC 3986 URL"""
+scalar Url
+
+type User {
+  displayName: String!
+  username: String!
+}
+
+union ValidateExaminer = Examiner | InvalidIdError
+
+union ValidateLecture = InvalidIdError | Lecture
+
+"""
+An exam that is written by the students.
+
+There is not always an official solution of the exam available, which is
+represented by the "solution" field.
+"""
+type WrittenExam implements Document {
+  date: Date!
+
+  """Whether the file is publicly downloadable without permissions."""
+  downloadable: Boolean!
+  examiners: [Examiner!]!
+  faculty: Faculty!
+
+  """
+  Associated PDF file (might not exist yet).
+  
+  The file is also None if the document is not downloadable and
+  the user doesn't have special permission to download it.
+  """
+  file: Url
+  id: DocumentId!
+  internalComment: String
+  lastUpdated: DateTime!
+  lectures: [Lecture!]!
+
+  """Number of pages of associated file."""
+  numPages: Int
+
+  """
+  If not public, the object is only accessible by
+  users with the necessary permissions.
+  """
+  public: Boolean!
+  publicComment: String
+  publishedOn: Date
+
+  """Rating for student-created documents."""
+  rating: Rating!
+  semester: Semester!
+  solution: SolutionType!
+  type: DocumentType!
+
+  """
+  True if all associated lectures and examiners are validated. A
+  document must be validated before it can be published.
+  """
+  validated: Boolean!
+  writtenType: WrittenExamType!
+}
+
+"""
+Provides input data that is specific to written exams
+(in addition to general document data).
+"""
+input WrittenExamData {
+  solutionType: SolutionType!
+}
+
+"""An enumeration."""
+enum WrittenExamType {
+  EXAM
+  MOCK
+}
