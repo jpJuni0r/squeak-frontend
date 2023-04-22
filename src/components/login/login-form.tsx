@@ -58,11 +58,14 @@ const LoginForm = () => {
       }
     }
 
-    await processAuthentication({
-      username: res.data!.login.user.username,
-      displayName: res.data!.login.user.displayName,
-      token: res.data!.login.token,
-    })
+    await processAuthentication(
+      {
+        username: res.data!.login.user.username,
+        displayName: res.data!.login.user.displayName,
+        token: res.data!.login.token,
+      },
+      res.data!.login.permissions
+    )
     await router.push("/")
   }
 

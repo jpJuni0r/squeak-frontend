@@ -5,9 +5,10 @@ import CartSummary from "@/components/document-selection/cart/cart-summary";
 
 interface Props {
   selectedDocuments: DocumentsQuery["documents"]["results"],
+  clearDocuments: () => void;
 }
 
-const Cart = ({selectedDocuments}: Props) => {
+const Cart = ({selectedDocuments, clearDocuments}: Props) => {
   return (
     <div className="card">
       <div className="card-body">
@@ -20,10 +21,11 @@ const Cart = ({selectedDocuments}: Props) => {
             <CartItem doc={doc} key={doc.id} />
           ))}
         </ul>
-        {!selectedDocuments.length && (
+        {!selectedDocuments.length ? (
           <em className="text-muted fs-6">No documents selected</em>
+        ) : (
+          <CartSummary docs={selectedDocuments} clearDocuments={clearDocuments} />
         )}
-        <CartSummary docs={selectedDocuments} />
       </div>
     </div>
   )

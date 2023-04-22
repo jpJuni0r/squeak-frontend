@@ -54,9 +54,8 @@ describe("money", () => {
     const roundToTwenty = [
       11, 12
     ]
-    // expect(Money.fromMinorUnit(roundToZero).roundUp().toMinorUnit()).toBe(0)
+    expect(Money.fromMinorUnit(roundToZero).roundUp().toMinorUnit()).toBe(0)
     for (const d of roundToTen) {
-      console.log(d)
       expect(Money.fromMinorUnit(d).roundUp().toMinorUnit()).toBe(10)
     }
     for (const d of roundToTwenty) {

@@ -17,3 +17,9 @@ $link-color-secondary: #63b3ed;
     visibility: visible;
   }
 }
+
+// price-tag component
+
+.price-tag {
+  transition: color 0.5s ease-in-out;
+}

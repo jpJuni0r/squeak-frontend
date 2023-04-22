@@ -1,9 +1,9 @@
 import React from "react"
+import Head from "next/head";
 import {gql} from "@/model/generated";
 import {useQuery} from "@apollo/client";
 import Spinner from "@/components/spinner/spinner";
 import {SiteConfigurationContext} from "@/context/site-configuration";
-import Head from "next/head";
 
 const configurationQuery = gql(`
 query siteConfiguration {

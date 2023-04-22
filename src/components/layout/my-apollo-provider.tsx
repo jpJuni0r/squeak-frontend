@@ -15,11 +15,15 @@ const MyApolloProvider = ({ children }: Props) => {
 
   const client = useMemo(() => {
     const authLink = setContext((_, { headers }) => {
+      const newHeaders = {
+        ...headers,
+      }
+      if (token) {
+        newHeaders["Authorization"] = `Bearer ${token}`
+      }
+
       return {
-        headers: {
-          ...headers,
-          authorization: token ? `Bearer ${token}` : "",
-        }
+        headers: newHeaders
       }
     });
 

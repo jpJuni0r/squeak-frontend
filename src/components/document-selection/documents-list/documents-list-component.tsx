@@ -20,7 +20,7 @@ const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocume
           <th>Lectures</th>
           <th>Examiners</th>
           <th>Semester</th>
-          <th className="text-end">Pages count</th>
+          <th className="text-end">Pages</th>
           <th/>
         </tr>
         </thead>

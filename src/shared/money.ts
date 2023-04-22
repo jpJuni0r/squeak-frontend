@@ -22,7 +22,7 @@ export default class Money {
     return Math.round(this.amount / Money.FACTOR)
   }
 
-  private toMajorUnit(): number {
+  toMajorUnit(): number {
     return this.toMinorUnit() / 100;
   }
 

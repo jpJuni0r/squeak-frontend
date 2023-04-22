@@ -1,10 +1,13 @@
-import React from "react"
+import React, {useMemo} from "react"
 import {gql} from "@/model/generated";
-import {DocumentsQuery, SiteConfigurationQuery} from "@/model/generated/graphql";
-import Money from "@/shared/money";
+import {DocumentsQuery, Permission} from "@/model/generated/graphql";
+import AuthFence from "@/shared/auth-fence";
+import PriceTag from "@/components/document-selection/cart/price-tag";
+import FinalizeOrderButton from "@/components/document-selection/finalize-order/finalize-order-button";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
+  clearDocuments: () => void;
 }
 
 const orderMutation = gql(`
@@ -62,14 +65,29 @@ mutation printDocuments(
 }
 `)
 
-const CartSummary = ({ docs }: Props) => {
+const CartSummary = ({ docs, clearDocuments }: Props) => {
   const pages = docs.reduce((akk, doc) => (doc.numPages ? doc.numPages : 0) + akk, 0)
+  const orderPermissions = useMemo(() => [Permission.PrintDocuments], []);
 
   return (
     <>
       <hr />
-      <div>
+      <div className="vstack gap-3">
+        <div>
+          You have {pages} pages for <PriceTag docs={docs} numOralExamDeposits={0} />.
+        </div>
 
+
+        <button className="btn btn-sm btn-outline-secondary" onClick={clearDocuments}>
+          Clear selection
+        </button>
+
+        <AuthFence permissions={orderPermissions} quiet>
+          Go to printing
+        </AuthFence>
+        <AuthFence permissions={orderPermissions} invert quiet>
+          <FinalizeOrderButton docs={docs} />
+        </AuthFence>
       </div>
     </>
   );

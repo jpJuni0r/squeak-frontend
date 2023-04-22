@@ -3,7 +3,7 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 const config: CodegenConfig = {
   overwrite: true,
   schema: "https://api.squeak-test.fsmi.uni-karlsruhe.de",
-  documents: "src/**/*.tsx",
+  documents: "src/**/*.(ts|tsx)",
   generates: {
     "src/model/generated/": {
       preset: "client",
