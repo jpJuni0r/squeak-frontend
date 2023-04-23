@@ -2,9 +2,9 @@ import React, {useContext} from "react";
 import Link from "next/link";
 import {Nav, Navbar, NavDropdown} from "react-bootstrap";
 import {PersonFill} from "react-bootstrap-icons";
+import {useRouter} from "next/router";
 
 import { UserContext } from "@/context/user";
-import {useRouter} from "next/router";
 
 const Header = () => {
   const router = useRouter();
@@ -15,8 +15,13 @@ const Header = () => {
       href: "/",
     },
     {
-      title: "Submission",
+      title: "Submit",
       href: "/submit",
+    },
+    // TODO: Add filter by user capabilities
+    {
+      title: "Admin",
+      href: "/admin",
     },
   ];
 

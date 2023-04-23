@@ -1,4 +1,4 @@
-import React from "react"
+import React, {useEffect} from "react"
 import {DocumentFilter, DocumentsQuery} from "@/model/generated/graphql";
 import {gql} from "@/model/generated";
 import Spinner from "@/components/spinner/spinner";

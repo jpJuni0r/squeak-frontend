@@ -43,7 +43,7 @@ interface FormValues {
 }
 
 const FinalizeOrderForm = ({docs, closeModal}: Props) => {
-  const [order] = useMutation(orderMutation)
+  const [order] = useMutation(orderMutation, {errorPolicy: "all"})
 
   const onSubmit = async (values: FormValues) => {
     const res = await order({

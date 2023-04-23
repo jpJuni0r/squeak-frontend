@@ -12,7 +12,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   AccountingPositionId: string;
   /** format: opaque */
   Cursor: unknown;
@@ -20,34 +20,34 @@ export type Scalars = {
   Date: string;
   /** Date with time (isoformat) */
   DateTime: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   DepositId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   DocumentId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   ExaminerId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   FacultyId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   LectureId: string;
   /**
    * format: Int (signed)
    * unit: Thousandth of a minor currency unit
    */
   Money: number;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   OrderId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   PrinterId: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   RequestId: string;
   /** format: (WS|SS) ?(\d{2}|\d{4}) */
   Semester: string;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   TransactionId: string;
   UUID: string;
   Upload: unknown;
-  /** format: UUID string representation */
+  /** format: opaque string representation */
   UploadId: string;
   /** format: RFC 3986 URL */
   Url: string;
@@ -76,6 +76,11 @@ export type Config = {
 
 export type CreateDepositResult = GeneralError | InvalidIdError | StringTooLargeError | Transaction;
 
+/** Note that it is possible here to use `... on Document`. */
+export type CreateDocumentResult = FileTooLargeError | GeneralError | InvalidIdError | OralExam | WrittenExam;
+
+export type CreateExamRequestResult = ExamRequest | FileTooLargeError | GeneralError | InvalidIdError;
+
 export type CreateExaminerResult = Examiner | GeneralError | StringTooLargeError;
 
 export type CreateOrderResult = GeneralError | InvalidIdError | Order | StringTooLargeError;
@@ -100,12 +105,24 @@ export enum DataKind {
   Deposit = 'DEPOSIT',
   Document = 'DOCUMENT',
   Examiner = 'EXAMINER',
+  ExamRequest = 'EXAM_REQUEST',
   Faculty = 'FACULTY',
   Lecture = 'LECTURE',
   Order = 'ORDER',
   Printer = 'PRINTER',
   Upload = 'UPLOAD'
 }
+
+/** Note that it is possible here to use `... on Document`. */
+export type DeleteDocumentResult = GeneralError | InvalidIdError | OralExam | WrittenExam;
+
+export type DeleteExaminerResult = Examiner | GeneralError | InvalidIdError;
+
+export type DeleteLectureResult = GeneralError | InvalidIdError | Lecture;
+
+export type DeleteOrderResult = InvalidIdError | Order;
+
+export type DeleteUploadResult = DocumentUpload | GeneralError | InvalidIdError;
 
 /** A deposit entry for oral exams. */
 export type Deposit = {
@@ -147,6 +164,12 @@ export type DepositInput = {
   tag: Scalars['String'];
 };
 
+export type DepositUpdateInput = {
+  comment?: InputMaybe<StringUpdateInput>;
+  lectureIds?: InputMaybe<Array<Scalars['LectureId']>>;
+  tag?: InputMaybe<Scalars['String']>;
+};
+
 /**
  * Documents are the central data type of Squeak.
  *
@@ -155,8 +178,9 @@ export type DepositInput = {
  * even belong to multiple lectures). Apart from that, each document has
  * additional associated data (see the respective field documentation).
  *
- * Note that as an interface Document is not instantiated itself,
- * but only its subclasses.
+ * Documents are associated to a file which must be a valid PDF file.
+ * For public documents, it is required that a file is present and that all
+ * examiners and lectures are validated.
  */
 export type Document = {
   date: Scalars['Date'];
@@ -173,6 +197,10 @@ export type Document = {
   file?: Maybe<Scalars['Url']>;
   id: Scalars['DocumentId'];
   internalComment?: Maybe<Scalars['String']>;
+  /**
+   * Timestamp of last change to the associated file
+   * (or the creation of the document, if no file exists).
+   */
   lastUpdated: Scalars['DateTime'];
   lectures: Array<Lecture>;
   /** Number of pages of associated file. */
@@ -237,6 +265,25 @@ export type DocumentFilter = {
   writtenSolutionType?: InputMaybe<Array<SolutionType>>;
 };
 
+/**
+ * Input for creating documents.
+ * The writtenExamData field must be present if and only if the type is a
+ * written exam.
+ */
+export type DocumentInput = {
+  date: Scalars['Date'];
+  downloadable: Scalars['Boolean'];
+  examinerIds: Array<Scalars['ExaminerId']>;
+  internalComment?: InputMaybe<Scalars['String']>;
+  lectureIds: Array<Scalars['LectureId']>;
+  public: Scalars['Boolean'];
+  publicComment?: InputMaybe<Scalars['String']>;
+  rating: Rating;
+  semester: Scalars['Semester'];
+  type: DocumentType;
+  writtenExamData?: InputMaybe<WrittenExamData>;
+};
+
 /** Union of possible values of WrittenExamType and OralExamType. */
 export enum DocumentType {
   OralExam = 'ORAL_EXAM',
@@ -244,6 +291,25 @@ export enum DocumentType {
   WrittenExam = 'WRITTEN_EXAM',
   WrittenMock = 'WRITTEN_MOCK'
 }
+
+/**
+ * Input for updating documents.
+ * Values that are null are not updated. The writtenExamData field can be
+ * used if and only if the type of the document is a written exam.
+ */
+export type DocumentUpdateInput = {
+  date?: InputMaybe<Scalars['Date']>;
+  downloadable?: InputMaybe<Scalars['Boolean']>;
+  examinerIds?: InputMaybe<Array<Scalars['ExaminerId']>>;
+  internalComment?: InputMaybe<StringUpdateInput>;
+  lectureIds?: InputMaybe<Array<Scalars['LectureId']>>;
+  public?: InputMaybe<Scalars['Boolean']>;
+  publicComment?: InputMaybe<StringUpdateInput>;
+  rating?: InputMaybe<Rating>;
+  semester?: InputMaybe<Scalars['Semester']>;
+  type?: InputMaybe<DocumentType>;
+  writtenExamData?: InputMaybe<WrittenExamData>;
+};
 
 /**
  * A document that is uploaded by a user (e.g. a transcript of an oral exam).
@@ -280,6 +346,8 @@ export type DocumentUpload = {
 
 export type DocumentsConfig = {
   __typename?: 'DocumentsConfig';
+  /** Document types that are allowed for exam requests. */
+  allowedExamRequestTypes: Array<DocumentType>;
   /** Document types that are allowed for uploads. */
   allowedUploadTypes: Array<DocumentType>;
 };
@@ -360,6 +428,13 @@ export type ExaminerInput = {
   prename?: InputMaybe<Scalars['String']>;
 };
 
+/** Values that are null are not updated. */
+export type ExaminerUpdateInput = {
+  institute?: InputMaybe<StringUpdateInput>;
+  name?: InputMaybe<Scalars['String']>;
+  prename?: InputMaybe<StringUpdateInput>;
+};
+
 /** Represents the faculty where a lecture is located. */
 export type Faculty = {
   __typename?: 'Faculty';
@@ -426,6 +501,13 @@ export type LectureInput = {
 
 export type LectureResult = GeneralError | InvalidIdError | Lecture | StringTooLargeError;
 
+/** Values that are null are not updated. */
+export type LectureUpdateInput = {
+  comment?: InputMaybe<StringUpdateInput>;
+  facultyId?: InputMaybe<Scalars['FacultyId']>;
+  name?: InputMaybe<Scalars['String']>;
+};
+
 export type LoginResult = Credentials | GeneralError;
 
 export type Mutation = {
@@ -445,6 +527,36 @@ export type Mutation = {
    *   EMPTY_TAG, NO_LECTURE_PROVIDED, INVALID_ID, DUPLICATE_ID, STRING_TOO_LARGE
    */
   createDeposit: CreateDepositResult;
+  /**
+   * Creates a new document with the provided data and file (or no file).
+   * In the data, at least one lecture and at least one examiner must be
+   * provided. For public documents, the lectures and examiners must be
+   * validated and a file must be present. The file must be a valid PDF.
+   *
+   * Returns the created document or an according error.
+   *
+   * Possible errors:
+   *   NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, LECTURE_NOT_VALIDATED,
+   *   EXAMINER_NOT_VALIDATED, DUPLICATE_ID, FILE_TOO_LARGE, PDF_PROCESSING,
+   *   INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE
+   */
+  createDocument: CreateDocumentResult;
+  /**
+   * Creates a new exam request with the provided data and file (or no
+   * file). In the data, at least one lecture and at least one examiner must
+   * be provided. For public documents, the lectures and examiners must be
+   * validated and a file must be present. The file must be a valid PDF.
+   * Further, the server might restrict which document types are allowed for
+   * exam requests (see config.documents).
+   *
+   * Returns the created exam request or an according error.
+   *
+   * Possible errors:
+   *   NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, LECTURE_NOT_VALIDATED,
+   *   EXAMINER_NOT_VALIDATED, DUPLICATE_ID, FILE_TOO_LARGE, PDF_PROCESSING,
+   *   INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE, INVALID_TYPE_FOR_EXAM_REQUEST
+   */
+  createExamRequest: CreateExamRequestResult;
   /**
    * Creates a new examiner. The name may not be empty and the combination
    * of prename, name and institute must be unique.
@@ -521,7 +633,7 @@ export type Mutation = {
    * Possible errors:
    *   NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
    *   FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
-   *   DEPOSIT_ALREADY_REFERENCED
+   *   INVALID_DOCUMENT_DATA, DEPOSIT_ALREADY_REFERENCED
    */
   createUploadForDeposit: UploadResult;
   /**
@@ -542,9 +654,69 @@ export type Mutation = {
    * Possible errors:
    *   EMPTY_TAG, NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID,
    *   DUPLICATE_ID, STRING_TOO_LARGE, FILE_TOO_LARGE, PDF_PROCESSING,
-   *   INVALID_TYPE_FOR_UPLOAD
+   *   INVALID_TYPE_FOR_UPLOAD, INVALID_DOCUMENT_DATA
    */
   createUploadForTag: UploadWithTagResult;
+  /**
+   * Deletes the existing document with the specified id. If the document
+   * is contained in one or multiple orders and `deleteFromOrders` is false,
+   * the document is not deleted and an error is returned.
+   *
+   * If `deleteFromOrders` is true, the document is deleted and removed from
+   * all orders. Orders that contain no other document are deleted.
+   *
+   * Returns the deleted document or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, DOCUMENT_STILL_REFERENCED
+   */
+  deleteDocument: DeleteDocumentResult;
+  /**
+   * Deletes the existing examiner with the specified id. If any document
+   * references this examiner, the examiner is not deleted and an error is
+   * returned.
+   *
+   * Returns the deleted examiner or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, EXAMINER_STILL_REFERENCED
+   */
+  deleteExaminer: DeleteExaminerResult;
+  /**
+   * Deletes the existing lecture with the specified id (including aliases).
+   * If any document references this lecture, the lecture is not deleted
+   * and an error is returned.
+   *
+   * Returns the deleted lecture or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, LECTURE_STILL_REFERENCED
+   */
+  deleteLecture: DeleteLectureResult;
+  /**
+   * Deletes the existing order with the specified id.
+   *
+   * Returns the deleted order or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID
+   */
+  deleteOrder: DeleteOrderResult;
+  /**
+   * Deletes the existing upload with the specified id. If the upload
+   * is contained in one or multiple orders it is not deleted and an error
+   * is returned. Also, the upload is not deleted if the associated document
+   * is already published.
+   *
+   * Note: The endpoint is intended for users to delete uploads created by
+   * themselves. For other cases, "deleteDocument" should be used instead.
+   *
+   * Returns the deleted upload or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, DOCUMENT_STILL_REFERENCED, UPLOAD_ALREADY_PUBLISHED
+   */
+  deleteUpload: DeleteUploadResult;
   /**
    * Tries to authenticate the user by using the configured authentication
    * provider. If successful, a JSON Web Token (JWT) containing username,
@@ -683,6 +855,39 @@ export type Mutation = {
    */
   updateDeposit: UpdateDepositResult;
   /**
+   * Updates the data of the specified, already existing, document.
+   * The data is subject to the same restrictions as if creating a new
+   * document.
+   *
+   * Returns the updated document or an according error.
+   *
+   * Possible errors:
+   *   NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
+   *   INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE, LECTURE_NOT_VALIDATED,
+   *   EXAMINER_NOT_VALIDATED
+   */
+  updateDocumentData: UpdateDocumentDataResult;
+  /**
+   * Updates or deletes (if the parameter is null) the file of the
+   * specified, already existing, document. Files of public documents can
+   * not be deleted.
+   *
+   * Returns the updated document or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, FILE_TOO_LARGE, PDF_PROCESSING, NO_FILE_AVAILABLE
+   */
+  updateDocumentFile: UpdateDocumentFileResult;
+  /**
+   * Updates the state of the specified, already existing, exam request.
+   *
+   * Returns the updated exam request or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID
+   */
+  updateExamRequestState: CreateExamRequestResult;
+  /**
    * Updates the data of the specified, already existing, examiner. The
    * data is subject to the same restrictions as if creating a new
    * examiner.
@@ -745,7 +950,7 @@ export type Mutation = {
    * Possible errors:
    *   NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
    *   FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
-   *   UPLOAD_ALREADY_PUBLISHED
+   *   INVALID_DOCUMENT_DATA, UPLOAD_ALREADY_PUBLISHED
    */
   updateUploadData: UploadResult;
   /**
@@ -760,6 +965,17 @@ export type Mutation = {
    *   INVALID_ID, DEPOSIT_ALREADY_REFERENCED
    */
   updateUploadDeposit: UpdateUploadDepositResult;
+  /**
+   * Updates data related to the state of the specified, already existing,
+   * upload. Additionally, the endpoint allows to publish or unpublish the
+   * associated document.
+   *
+   * Returns the updated upload or an according error.
+   *
+   * Possible errors:
+   *   INVALID_ID, LECTURE_NOT_VALIDATED, EXAMINER_NOT_VALIDATED
+   */
+  updateUploadState: UpdateUploadStateResult;
   /**
    * Reassigns the specified, already existing, upload by providing a new
    * tag. If the tag is null, the upload is set to anonymous.
@@ -800,6 +1016,19 @@ export type Mutation = {
 export type MutationCreateDepositArgs = {
   accountingPositionId: Scalars['AccountingPositionId'];
   data: DepositInput;
+};
+
+
+export type MutationCreateDocumentArgs = {
+  data: DocumentInput;
+  file?: InputMaybe<Scalars['Upload']>;
+};
+
+
+export type MutationCreateExamRequestArgs = {
+  data: DocumentInput;
+  file?: InputMaybe<Scalars['Upload']>;
+  state: RequestState;
 };
 
 
@@ -845,6 +1074,32 @@ export type MutationCreateUploadForTagArgs = {
   data: RestrictedDocumentInput;
   file: Scalars['Upload'];
   tag?: InputMaybe<Scalars['String']>;
+};
+
+
+export type MutationDeleteDocumentArgs = {
+  deleteFromOrders?: Scalars['Boolean'];
+  documentId: Scalars['DocumentId'];
+};
+
+
+export type MutationDeleteExaminerArgs = {
+  examinerId: Scalars['ExaminerId'];
+};
+
+
+export type MutationDeleteLectureArgs = {
+  lectureId: Scalars['LectureId'];
+};
+
+
+export type MutationDeleteOrderArgs = {
+  orderId: Scalars['OrderId'];
+};
+
+
+export type MutationDeleteUploadArgs = {
+  uploadId: Scalars['UploadId'];
 };
 
 
@@ -899,19 +1154,37 @@ export type MutationUndoTransactionArgs = {
 
 
 export type MutationUpdateDepositArgs = {
-  data: DepositInput;
+  data: DepositUpdateInput;
   depositId: Scalars['DepositId'];
 };
 
 
+export type MutationUpdateDocumentDataArgs = {
+  data: DocumentUpdateInput;
+  documentId: Scalars['DocumentId'];
+};
+
+
+export type MutationUpdateDocumentFileArgs = {
+  documentId: Scalars['DocumentId'];
+  file?: InputMaybe<Scalars['Upload']>;
+};
+
+
+export type MutationUpdateExamRequestStateArgs = {
+  requestId: Scalars['RequestId'];
+  state: RequestState;
+};
+
+
 export type MutationUpdateExaminerArgs = {
-  data: ExaminerInput;
+  data: ExaminerUpdateInput;
   examinerId: Scalars['ExaminerId'];
 };
 
 
 export type MutationUpdateLectureArgs = {
-  data: LectureInput;
+  data: LectureUpdateInput;
   lectureId: Scalars['LectureId'];
 };
 
@@ -930,7 +1203,7 @@ export type MutationUpdateOrderDocumentsArgs = {
 
 
 export type MutationUpdateUploadDataArgs = {
-  data?: InputMaybe<RestrictedDocumentInput>;
+  data?: InputMaybe<RestrictedDocumentUpdateInput>;
   file?: InputMaybe<Scalars['Upload']>;
   uploadId: Scalars['UploadId'];
 };
@@ -939,6 +1212,13 @@ export type MutationUpdateUploadDataArgs = {
 export type MutationUpdateUploadDepositArgs = {
   depositId: Scalars['DepositId'];
   uploadId: Scalars['UploadId'];
+};
+
+
+export type MutationUpdateUploadStateArgs = {
+  public?: InputMaybe<Scalars['Boolean']>;
+  uploadId: Scalars['UploadId'];
+  uploadInput: UploadStateInput;
 };
 
 
@@ -978,6 +1258,10 @@ export type OralExam = Document & {
   file?: Maybe<Scalars['Url']>;
   id: Scalars['DocumentId'];
   internalComment?: Maybe<Scalars['String']>;
+  /**
+   * Timestamp of last change to the associated file
+   * (or the creation of the document, if no file exists).
+   */
   lastUpdated: Scalars['DateTime'];
   lectures: Array<Lecture>;
   /** Number of pages of associated file. */
@@ -1084,9 +1368,13 @@ export enum Permission {
   AccessInternalDocumentData = 'ACCESS_INTERNAL_DOCUMENT_DATA',
   CreateData = 'CREATE_DATA',
   CreateDeposits = 'CREATE_DEPOSITS',
+  CreateExamRequests = 'CREATE_EXAM_REQUESTS',
   CreateOrders = 'CREATE_ORDERS',
   CreateUnvalidatedData = 'CREATE_UNVALIDATED_DATA',
   CreateUploads = 'CREATE_UPLOADS',
+  DeleteData = 'DELETE_DATA',
+  DeleteOrders = 'DELETE_ORDERS',
+  DeleteUploads = 'DELETE_UPLOADS',
   PayoutRewards = 'PAYOUT_REWARDS',
   PrintDocuments = 'PRINT_DOCUMENTS',
   QueryDeposits = 'QUERY_DEPOSITS',
@@ -1106,9 +1394,11 @@ export enum Permission {
   UndoTransactions = 'UNDO_TRANSACTIONS',
   UpdateData = 'UPDATE_DATA',
   UpdateDeposits = 'UPDATE_DEPOSITS',
+  UpdateExamRequests = 'UPDATE_EXAM_REQUESTS',
   UpdateOrders = 'UPDATE_ORDERS',
   UpdateUploads = 'UPDATE_UPLOADS',
-  ValidateData = 'VALIDATE_DATA'
+  ValidateData = 'VALIDATE_DATA',
+  ValidateUploads = 'VALIDATE_UPLOADS'
 }
 
 export type PriceConfig = {
@@ -1380,6 +1670,20 @@ export type RestrictedDocumentInput = {
   writtenExamData?: InputMaybe<WrittenExamData>;
 };
 
+/**
+ * Input for updating documents with restricted permissions.
+ * Values that are null are not updated. The writtenExamData field can be
+ * used if and only if the type of the document is a written exam.
+ */
+export type RestrictedDocumentUpdateInput = {
+  date?: InputMaybe<Scalars['Date']>;
+  examinerIds?: InputMaybe<Array<Scalars['ExaminerId']>>;
+  lectureIds?: InputMaybe<Array<Scalars['LectureId']>>;
+  semester?: InputMaybe<Scalars['Semester']>;
+  type?: InputMaybe<DocumentType>;
+  writtenExamData?: InputMaybe<WrittenExamData>;
+};
+
 export type ReturnDepositResult = GeneralError | InvalidIdError | Transaction;
 
 /**
@@ -1407,6 +1711,14 @@ export type StringTooLargeError = Error & {
   /** Maximum allowed number of chars for this input. */
   maximumNumChars: Scalars['Int'];
   msg: Scalars['String'];
+};
+
+/**
+ * Input for either replacing or deleting an optional string. If `value` is
+ * null, the string is deleted.
+ */
+export type StringUpdateInput = {
+  value?: InputMaybe<Scalars['String']>;
 };
 
 /**
@@ -1460,11 +1772,19 @@ export enum TransactionType {
 
 export type UpdateDepositResult = Deposit | GeneralError | InvalidIdError | StringTooLargeError;
 
+/** Note that it is possible here to use `... on Document`. */
+export type UpdateDocumentDataResult = GeneralError | InvalidIdError | OralExam | WrittenExam;
+
+/** Note that it is possible here to use `... on Document`. */
+export type UpdateDocumentFileResult = FileTooLargeError | GeneralError | InvalidIdError | OralExam | WrittenExam;
+
 export type UpdateExaminerResult = Examiner | GeneralError | InvalidIdError | StringTooLargeError;
 
 export type UpdateOrderResult = GeneralError | InvalidIdError | Order;
 
 export type UpdateUploadDepositResult = DocumentUpload | GeneralError | InvalidIdError;
+
+export type UpdateUploadStateResult = DocumentUpload | GeneralError | InvalidIdError;
 
 export type UpdateUploadTagResult = DocumentUpload | GeneralError | InvalidIdError | StringTooLargeError;
 
@@ -1513,6 +1833,21 @@ export enum UploadState {
   Rejected = 'REJECTED'
 }
 
+/**
+ * Input for updating data related to the state of an upload.
+ * Values that are null are not updated.
+ */
+export type UploadStateInput = {
+  depositAvailable?: InputMaybe<Scalars['Boolean']>;
+  /**
+   * Warning: Setting rewardAvailable to true might be ignored (i.e., the
+   * reward might still not be available) depending on the reward policy of
+   * the server.
+   */
+  rewardAvailable?: InputMaybe<Scalars['Boolean']>;
+  state?: InputMaybe<UploadState>;
+};
+
 export type UploadWithTagResult = DocumentUpload | FileTooLargeError | GeneralError | InvalidIdError | StringTooLargeError;
 
 export type User = {
@@ -1547,6 +1882,10 @@ export type WrittenExam = Document & {
   file?: Maybe<Scalars['Url']>;
   id: Scalars['DocumentId'];
   internalComment?: Maybe<Scalars['String']>;
+  /**
+   * Timestamp of last change to the associated file
+   * (or the creation of the document, if no file exists).
+   */
   lastUpdated: Scalars['DateTime'];
   lectures: Array<Lecture>;
   /** Number of pages of associated file. */
@@ -1585,6 +1924,37 @@ export enum WrittenExamType {
   Mock = 'MOCK'
 }
 
+export type ExaminersQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ExaminersQuery = { __typename?: 'Query', examiners: Array<{ __typename?: 'Examiner', id: string, name: string, validated: boolean, displayName: string, institute?: string | null }> };
+
+export type FacultiesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type FacultiesQuery = { __typename?: 'Query', faculties: Array<{ __typename?: 'Faculty', id: string, displayName: string }> };
+
+export type CreateLectureMutationVariables = Exact<{
+  data: LectureInput;
+  validated: Scalars['Boolean'];
+}>;
+
+
+export type CreateLectureMutation = { __typename?: 'Mutation', createLecture: { __typename: 'GeneralError', errorCode: string, msg: string } | { __typename: 'InvalidIdError', errorCode: string, msg: string } | { __typename: 'Lecture', id: string } | { __typename: 'StringTooLargeError', errorCode: string, msg: string } };
+
+export type UpdateLectureMutationVariables = Exact<{
+  lectureId: Scalars['LectureId'];
+  data: LectureUpdateInput;
+}>;
+
+
+export type UpdateLectureMutation = { __typename?: 'Mutation', updateLecture: { __typename?: 'GeneralError', msg: string } | { __typename?: 'InvalidIdError', msg: string } | { __typename?: 'Lecture', id: string } | { __typename?: 'StringTooLargeError', msg: string } };
+
+export type LecturesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LecturesQuery = { __typename?: 'Query', lectures: Array<{ __typename?: 'Lecture', id: string, displayName: string, validated: boolean, aliases: Array<string>, comment?: string | null, availableRewards: Array<DocumentType>, faculty: { __typename?: 'Faculty', id: string, displayName: string } }>, faculties: Array<{ __typename?: 'Faculty', id: string, displayName: string }> };
+
 export type PrintDocumentsMutationVariables = Exact<{
   documentList: Array<Scalars['DocumentId']> | Scalars['DocumentId'];
   deposits: Array<Array<Scalars['LectureId']> | Scalars['LectureId']> | Array<Scalars['LectureId']> | Scalars['LectureId'];
@@ -1606,6 +1976,11 @@ export type PriceQueryVariables = Exact<{
 
 
 export type PriceQuery = { __typename?: 'Query', price?: number | null };
+
+export type FilterMetaQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type FilterMetaQuery = { __typename?: 'Query', examiners: Array<{ __typename?: 'Examiner', id: string, name: string, validated: boolean, prename?: string | null, institute?: string | null, displayName: string }>, lectures: Array<{ __typename?: 'Lecture', id: string, displayName: string, validated: boolean, comment?: string | null, aliases: Array<string>, availableRewards: Array<DocumentType>, faculty: { __typename?: 'Faculty', id: string, displayName: string } }> };
 
 export type DocumentsQueryVariables = Exact<{
   filters: Array<DocumentFilter> | DocumentFilter;
@@ -1641,8 +2016,14 @@ export type PermissionsQueryVariables = Exact<{ [key: string]: never; }>;
 export type PermissionsQuery = { __typename?: 'Query', me: { __typename?: 'Actor', permissions: Array<Permission> } };
 
 
+export const ExaminersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"examiners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"examiners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"validated"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"institute"}}]}}]}}]} as unknown as DocumentNode<ExaminersQuery, ExaminersQueryVariables>;
+export const FacultiesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"faculties"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"faculties"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}}]}}]} as unknown as DocumentNode<FacultiesQuery, FacultiesQueryVariables>;
+export const CreateLectureDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createLecture"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"data"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LectureInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"validated"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createLecture"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"data"},"value":{"kind":"Variable","name":{"kind":"Name","value":"data"}}},{"kind":"Argument","name":{"kind":"Name","value":"validated"},"value":{"kind":"Variable","name":{"kind":"Name","value":"validated"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Lecture"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidIdError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"StringTooLargeError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Error"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}}]}}]}}]} as unknown as DocumentNode<CreateLectureMutation, CreateLectureMutationVariables>;
+export const UpdateLectureDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateLecture"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"lectureId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LectureId"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"data"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LectureUpdateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateLecture"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"lectureId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"lectureId"}}},{"kind":"Argument","name":{"kind":"Name","value":"data"},"value":{"kind":"Variable","name":{"kind":"Name","value":"data"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Lecture"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidIdError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"StringTooLargeError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Error"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateLectureMutation, UpdateLectureMutationVariables>;
+export const LecturesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"lectures"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"lectures"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"validated"}},{"kind":"Field","name":{"kind":"Name","value":"aliases"}},{"kind":"Field","name":{"kind":"Name","value":"comment"}},{"kind":"Field","name":{"kind":"Name","value":"faculty"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"availableRewards"}}]}},{"kind":"Field","name":{"kind":"Name","value":"faculties"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}}]}}]} as unknown as DocumentNode<LecturesQuery, LecturesQueryVariables>;
 export const PrintDocumentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"printDocuments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documentList"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DocumentId"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"deposits"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LectureId"}}}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tag"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"totalPrice"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Money"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"printerId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PrinterId"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountingPositionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AccountingPositionId"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"donation"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Money"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"printFrontpage"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"printDocuments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"documentList"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documentList"}}},{"kind":"Argument","name":{"kind":"Name","value":"deposits"},"value":{"kind":"Variable","name":{"kind":"Name","value":"deposits"}}},{"kind":"Argument","name":{"kind":"Name","value":"tag"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tag"}}},{"kind":"Argument","name":{"kind":"Name","value":"totalPrice"},"value":{"kind":"Variable","name":{"kind":"Name","value":"totalPrice"}}},{"kind":"Argument","name":{"kind":"Name","value":"printerId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"printerId"}}},{"kind":"Argument","name":{"kind":"Name","value":"accountingPositionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountingPositionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"donation"},"value":{"kind":"Variable","name":{"kind":"Name","value":"donation"}}},{"kind":"Argument","name":{"kind":"Name","value":"printFrontpage"},"value":{"kind":"Variable","name":{"kind":"Name","value":"printFrontpage"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TransactionList"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"transactions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"associatedTag"}},{"kind":"Field","name":{"kind":"Name","value":"transactionType"}},{"kind":"Field","name":{"kind":"Name","value":"timestamp"}},{"kind":"Field","name":{"kind":"Name","value":"lectures"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidIdError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"StringTooLargeError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PriceError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}}]}}]}}]} as unknown as DocumentNode<PrintDocumentsMutation, PrintDocumentsMutationVariables>;
 export const PriceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"price"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documents"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DocumentId"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"numOralExamDeposits"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"price"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"documents"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documents"}}},{"kind":"Argument","name":{"kind":"Name","value":"numOralExamDeposits"},"value":{"kind":"Variable","name":{"kind":"Name","value":"numOralExamDeposits"}}}]}]}}]} as unknown as DocumentNode<PriceQuery, PriceQueryVariables>;
+export const FilterMetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"filterMeta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"examiners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"validated"}},{"kind":"Field","name":{"kind":"Name","value":"prename"}},{"kind":"Field","name":{"kind":"Name","value":"institute"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lectures"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"validated"}},{"kind":"Field","name":{"kind":"Name","value":"comment"}},{"kind":"Field","name":{"kind":"Name","value":"aliases"}},{"kind":"Field","name":{"kind":"Name","value":"faculty"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"availableRewards"}}]}}]}}]} as unknown as DocumentNode<FilterMetaQuery, FilterMetaQueryVariables>;
 export const DocumentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"documents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DocumentFilter"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"documents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}},{"kind":"Argument","name":{"kind":"Name","value":"count"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"semester"}},{"kind":"Field","name":{"kind":"Name","value":"public"}},{"kind":"Field","name":{"kind":"Name","value":"publicComment"}},{"kind":"Field","name":{"kind":"Name","value":"publishedOn"}},{"kind":"Field","name":{"kind":"Name","value":"downloadable"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"numPages"}},{"kind":"Field","name":{"kind":"Name","value":"examiners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lectures"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}},{"kind":"Field","name":{"kind":"Name","value":"totalAvailable"}}]}}]}}]} as unknown as DocumentNode<DocumentsQuery, DocumentsQueryVariables>;
 export const CreateOrderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createOrder"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tag"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"documents"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DocumentId"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createOrder"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"tag"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tag"}}},{"kind":"Argument","name":{"kind":"Name","value":"documents"},"value":{"kind":"Variable","name":{"kind":"Name","value":"documents"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Order"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"tag"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidIdError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"StringTooLargeError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GeneralError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"msg"}}]}}]}}]}}]} as unknown as DocumentNode<CreateOrderMutation, CreateOrderMutationVariables>;
 export const SiteConfigurationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"siteConfiguration"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"config"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"siteName"}},{"kind":"Field","name":{"kind":"Name","value":"printers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"accountingPositions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"currency"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"symbol"}},{"kind":"Field","name":{"kind":"Name","value":"minorDigits"}}]}}]}}]}}]} as unknown as DocumentNode<SiteConfigurationQuery, SiteConfigurationQueryVariables>;

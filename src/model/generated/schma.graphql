@@ -3,7 +3,7 @@ type AccountingPosition {
   name: String!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar AccountingPositionId
 
 type Actor {
@@ -20,6 +20,11 @@ type Config {
 }
 
 union CreateDepositResult = GeneralError | InvalidIdError | StringTooLargeError | Transaction
+
+"""Note that it is possible here to use `... on Document`."""
+union CreateDocumentResult = FileTooLargeError | GeneralError | InvalidIdError | OralExam | WrittenExam
+
+union CreateExamRequestResult = ExamRequest | FileTooLargeError | GeneralError | InvalidIdError
 
 union CreateExaminerResult = Examiner | GeneralError | StringTooLargeError
 
@@ -46,6 +51,7 @@ enum DataKind {
   DEPOSIT
   DOCUMENT
   EXAMINER
+  EXAM_REQUEST
   FACULTY
   LECTURE
   ORDER
@@ -58,6 +64,17 @@ scalar Date
 
 """Date with time (isoformat)"""
 scalar DateTime
+
+"""Note that it is possible here to use `... on Document`."""
+union DeleteDocumentResult = GeneralError | InvalidIdError | OralExam | WrittenExam
+
+union DeleteExaminerResult = Examiner | GeneralError | InvalidIdError
+
+union DeleteLectureResult = GeneralError | InvalidIdError | Lecture
+
+union DeleteOrderResult = InvalidIdError | Order
+
+union DeleteUploadResult = DocumentUpload | GeneralError | InvalidIdError
 
 """A deposit entry for oral exams."""
 type Deposit {
@@ -95,13 +112,19 @@ input DepositFilter {
   tag: String
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar DepositId
 
 input DepositInput {
   comment: String
   lectureIds: [LectureId!]!
   tag: String!
+}
+
+input DepositUpdateInput {
+  comment: StringUpdateInput
+  lectureIds: [LectureId!]
+  tag: String
 }
 
 """
@@ -112,8 +135,9 @@ semester, faculty, examiner(s) and lecture (in some cases, an exam can
 even belong to multiple lectures). Apart from that, each document has
 additional associated data (see the respective field documentation).
 
-Note that as an interface Document is not instantiated itself,
-but only its subclasses.
+Documents are associated to a file which must be a valid PDF file.
+For public documents, it is required that a file is present and that all
+examiners and lectures are validated.
 """
 interface Document {
   date: Date!
@@ -132,6 +156,11 @@ interface Document {
   file: Url
   id: DocumentId!
   internalComment: String
+
+  """
+  Timestamp of last change to the associated file
+  (or the creation of the document, if no file exists).
+  """
   lastUpdated: DateTime!
   lectures: [Lecture!]!
 
@@ -207,8 +236,27 @@ input DocumentFilter {
   writtenSolutionType: [SolutionType!]
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar DocumentId
+
+"""
+Input for creating documents.
+The writtenExamData field must be present if and only if the type is a
+written exam.
+"""
+input DocumentInput {
+  date: Date!
+  downloadable: Boolean!
+  examinerIds: [ExaminerId!]!
+  internalComment: String
+  lectureIds: [LectureId!]!
+  public: Boolean!
+  publicComment: String
+  rating: Rating!
+  semester: Semester!
+  type: DocumentType!
+  writtenExamData: WrittenExamData
+}
 
 """Union of possible values of WrittenExamType and OralExamType."""
 enum DocumentType {
@@ -216,6 +264,25 @@ enum DocumentType {
   ORAL_REEXAM
   WRITTEN_EXAM
   WRITTEN_MOCK
+}
+
+"""
+Input for updating documents.
+Values that are null are not updated. The writtenExamData field can be
+used if and only if the type of the document is a written exam.
+"""
+input DocumentUpdateInput {
+  date: Date
+  downloadable: Boolean
+  examinerIds: [ExaminerId!]
+  internalComment: StringUpdateInput
+  lectureIds: [LectureId!]
+  public: Boolean
+  publicComment: StringUpdateInput
+  rating: Rating
+  semester: Semester
+  type: DocumentType
+  writtenExamData: WrittenExamData
 }
 
 """
@@ -255,6 +322,9 @@ type DocumentUpload {
 }
 
 type DocumentsConfig {
+  """Document types that are allowed for exam requests."""
+  allowedExamRequestTypes: [DocumentType!]!
+
   """Document types that are allowed for uploads."""
   allowedUploadTypes: [DocumentType!]!
 }
@@ -328,7 +398,7 @@ type Examiner {
   validated: Boolean!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar ExaminerId
 
 input ExaminerInput {
@@ -337,13 +407,20 @@ input ExaminerInput {
   prename: String
 }
 
+"""Values that are null are not updated."""
+input ExaminerUpdateInput {
+  institute: StringUpdateInput
+  name: String
+  prename: StringUpdateInput
+}
+
 """Represents the faculty where a lecture is located."""
 type Faculty {
   displayName: String!
   id: FacultyId!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar FacultyId
 
 """The uploaded file is too large and thus rejected by the server."""
@@ -396,7 +473,7 @@ type Lecture {
   validated: Boolean!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar LectureId
 
 input LectureInput {
@@ -406,6 +483,13 @@ input LectureInput {
 }
 
 union LectureResult = GeneralError | InvalidIdError | Lecture | StringTooLargeError
+
+"""Values that are null are not updated."""
+input LectureUpdateInput {
+  comment: StringUpdateInput
+  facultyId: FacultyId
+  name: String
+}
 
 union LoginResult = Credentials | GeneralError
 
@@ -431,6 +515,38 @@ type Mutation {
     EMPTY_TAG, NO_LECTURE_PROVIDED, INVALID_ID, DUPLICATE_ID, STRING_TOO_LARGE
   """
   createDeposit(accountingPositionId: AccountingPositionId!, data: DepositInput!): CreateDepositResult!
+
+  """
+  Creates a new document with the provided data and file (or no file).
+  In the data, at least one lecture and at least one examiner must be
+  provided. For public documents, the lectures and examiners must be
+  validated and a file must be present. The file must be a valid PDF.
+  
+  Returns the created document or an according error.
+  
+  Possible errors:
+    NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, LECTURE_NOT_VALIDATED,
+    EXAMINER_NOT_VALIDATED, DUPLICATE_ID, FILE_TOO_LARGE, PDF_PROCESSING,
+    INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE
+  """
+  createDocument(data: DocumentInput!, file: Upload): CreateDocumentResult!
+
+  """
+  Creates a new exam request with the provided data and file (or no
+  file). In the data, at least one lecture and at least one examiner must
+  be provided. For public documents, the lectures and examiners must be
+  validated and a file must be present. The file must be a valid PDF.
+  Further, the server might restrict which document types are allowed for
+  exam requests (see config.documents).
+  
+  Returns the created exam request or an according error.
+  
+  Possible errors:
+    NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, LECTURE_NOT_VALIDATED,
+    EXAMINER_NOT_VALIDATED, DUPLICATE_ID, FILE_TOO_LARGE, PDF_PROCESSING,
+    INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE, INVALID_TYPE_FOR_EXAM_REQUEST
+  """
+  createExamRequest(data: DocumentInput!, file: Upload, state: RequestState!): CreateExamRequestResult!
 
   """
   Creates a new examiner. The name may not be empty and the combination
@@ -513,7 +629,7 @@ type Mutation {
   Possible errors:
     NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
     FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
-    DEPOSIT_ALREADY_REFERENCED
+    INVALID_DOCUMENT_DATA, DEPOSIT_ALREADY_REFERENCED
   """
   createUploadForDeposit(data: RestrictedDocumentInput!, depositId: DepositId!, file: Upload!): UploadResult!
 
@@ -535,9 +651,74 @@ type Mutation {
   Possible errors:
     EMPTY_TAG, NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID,
     DUPLICATE_ID, STRING_TOO_LARGE, FILE_TOO_LARGE, PDF_PROCESSING,
-    INVALID_TYPE_FOR_UPLOAD
+    INVALID_TYPE_FOR_UPLOAD, INVALID_DOCUMENT_DATA
   """
   createUploadForTag(data: RestrictedDocumentInput!, file: Upload!, tag: String): UploadWithTagResult!
+
+  """
+  Deletes the existing document with the specified id. If the document
+  is contained in one or multiple orders and `deleteFromOrders` is false,
+  the document is not deleted and an error is returned.
+  
+  If `deleteFromOrders` is true, the document is deleted and removed from
+  all orders. Orders that contain no other document are deleted.
+  
+  Returns the deleted document or an according error.
+  
+  Possible errors:
+    INVALID_ID, DOCUMENT_STILL_REFERENCED
+  """
+  deleteDocument(deleteFromOrders: Boolean! = false, documentId: DocumentId!): DeleteDocumentResult!
+
+  """
+  Deletes the existing examiner with the specified id. If any document
+  references this examiner, the examiner is not deleted and an error is
+  returned.
+  
+  Returns the deleted examiner or an according error.
+  
+  Possible errors:
+    INVALID_ID, EXAMINER_STILL_REFERENCED
+  """
+  deleteExaminer(examinerId: ExaminerId!): DeleteExaminerResult!
+
+  """
+  Deletes the existing lecture with the specified id (including aliases).
+  If any document references this lecture, the lecture is not deleted
+  and an error is returned.
+  
+  Returns the deleted lecture or an according error.
+  
+  Possible errors:
+    INVALID_ID, LECTURE_STILL_REFERENCED
+  """
+  deleteLecture(lectureId: LectureId!): DeleteLectureResult!
+
+  """
+  Deletes the existing order with the specified id.
+  
+  Returns the deleted order or an according error.
+  
+  Possible errors:
+    INVALID_ID
+  """
+  deleteOrder(orderId: OrderId!): DeleteOrderResult!
+
+  """
+  Deletes the existing upload with the specified id. If the upload
+  is contained in one or multiple orders it is not deleted and an error
+  is returned. Also, the upload is not deleted if the associated document
+  is already published.
+  
+  Note: The endpoint is intended for users to delete uploads created by
+  themselves. For other cases, "deleteDocument" should be used instead.
+  
+  Returns the deleted upload or an according error.
+  
+  Possible errors:
+    INVALID_ID, DOCUMENT_STILL_REFERENCED, UPLOAD_ALREADY_PUBLISHED
+  """
+  deleteUpload(uploadId: UploadId!): DeleteUploadResult!
 
   """
   Tries to authenticate the user by using the configured authentication
@@ -682,7 +863,43 @@ type Mutation {
   Possible errors:
     EMPTY_TAG, NO_LECTURE_PROVIDED, INVALID_ID, DUPLICATE_ID, STRING_TOO_LARGE
   """
-  updateDeposit(data: DepositInput!, depositId: DepositId!): UpdateDepositResult!
+  updateDeposit(data: DepositUpdateInput!, depositId: DepositId!): UpdateDepositResult!
+
+  """
+  Updates the data of the specified, already existing, document.
+  The data is subject to the same restrictions as if creating a new
+  document.
+  
+  Returns the updated document or an according error.
+  
+  Possible errors:
+    NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
+    INVALID_DOCUMENT_DATA, NO_FILE_AVAILABLE, LECTURE_NOT_VALIDATED,
+    EXAMINER_NOT_VALIDATED
+  """
+  updateDocumentData(data: DocumentUpdateInput!, documentId: DocumentId!): UpdateDocumentDataResult!
+
+  """
+  Updates or deletes (if the parameter is null) the file of the
+  specified, already existing, document. Files of public documents can
+  not be deleted.
+  
+  Returns the updated document or an according error.
+  
+  Possible errors:
+    INVALID_ID, FILE_TOO_LARGE, PDF_PROCESSING, NO_FILE_AVAILABLE
+  """
+  updateDocumentFile(documentId: DocumentId!, file: Upload): UpdateDocumentFileResult!
+
+  """
+  Updates the state of the specified, already existing, exam request.
+  
+  Returns the updated exam request or an according error.
+  
+  Possible errors:
+    INVALID_ID
+  """
+  updateExamRequestState(requestId: RequestId!, state: RequestState!): CreateExamRequestResult!
 
   """
   Updates the data of the specified, already existing, examiner. The
@@ -694,7 +911,7 @@ type Mutation {
   Possible errors:
     EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
   """
-  updateExaminer(data: ExaminerInput!, examinerId: ExaminerId!): UpdateExaminerResult!
+  updateExaminer(data: ExaminerUpdateInput!, examinerId: ExaminerId!): UpdateExaminerResult!
 
   """
   Updates the data of the specified, already existing, lecture. The
@@ -705,7 +922,7 @@ type Mutation {
   Possible errors:
     EMPTY_NAME, STRING_TOO_LARGE, DUPLICATE_NAME, INVALID_ID
   """
-  updateLecture(data: LectureInput!, lectureId: LectureId!): LectureResult!
+  updateLecture(data: LectureUpdateInput!, lectureId: LectureId!): LectureResult!
 
   """
   Updates the aliases of the specified, already existing, lecture. Per
@@ -751,9 +968,9 @@ type Mutation {
   Possible errors:
     NO_LECTURE_PROVIDED, NO_EXAMINER_PROVIDED, INVALID_ID, DUPLICATE_ID,
     FILE_TOO_LARGE, PDF_PROCESSING, INVALID_TYPE_FOR_UPLOAD,
-    UPLOAD_ALREADY_PUBLISHED
+    INVALID_DOCUMENT_DATA, UPLOAD_ALREADY_PUBLISHED
   """
-  updateUploadData(data: RestrictedDocumentInput = null, file: Upload = null, uploadId: UploadId!): UploadResult!
+  updateUploadData(data: RestrictedDocumentUpdateInput = null, file: Upload = null, uploadId: UploadId!): UploadResult!
 
   """
   Reassigns the specified, already existing, upload by providing a new
@@ -767,6 +984,18 @@ type Mutation {
     INVALID_ID, DEPOSIT_ALREADY_REFERENCED
   """
   updateUploadDeposit(depositId: DepositId!, uploadId: UploadId!): UpdateUploadDepositResult!
+
+  """
+  Updates data related to the state of the specified, already existing,
+  upload. Additionally, the endpoint allows to publish or unpublish the
+  associated document.
+  
+  Returns the updated upload or an according error.
+  
+  Possible errors:
+    INVALID_ID, LECTURE_NOT_VALIDATED, EXAMINER_NOT_VALIDATED
+  """
+  updateUploadState(public: Boolean = null, uploadId: UploadId!, uploadInput: UploadStateInput!): UpdateUploadStateResult!
 
   """
   Reassigns the specified, already existing, upload by providing a new
@@ -828,6 +1057,11 @@ type OralExam implements Document {
   file: Url
   id: DocumentId!
   internalComment: String
+
+  """
+  Timestamp of last change to the associated file
+  (or the creation of the document, if no file exists).
+  """
   lastUpdated: DateTime!
   lectures: [Lecture!]!
 
@@ -920,7 +1154,7 @@ input OrderFilter {
   tagIsPresent: Boolean
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar OrderId
 
 """An enumeration."""
@@ -935,9 +1169,13 @@ enum Permission {
   ACCESS_INTERNAL_DOCUMENT_DATA
   CREATE_DATA
   CREATE_DEPOSITS
+  CREATE_EXAM_REQUESTS
   CREATE_ORDERS
   CREATE_UNVALIDATED_DATA
   CREATE_UPLOADS
+  DELETE_DATA
+  DELETE_ORDERS
+  DELETE_UPLOADS
   PAYOUT_REWARDS
   PRINT_DOCUMENTS
   QUERY_DEPOSITS
@@ -957,9 +1195,11 @@ enum Permission {
   UNDO_TRANSACTIONS
   UPDATE_DATA
   UPDATE_DEPOSITS
+  UPDATE_EXAM_REQUESTS
   UPDATE_ORDERS
   UPDATE_UPLOADS
   VALIDATE_DATA
+  VALIDATE_UPLOADS
 }
 
 type PriceConfig {
@@ -991,7 +1231,7 @@ type Printer {
   name: String!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar PrinterId
 
 type Query {
@@ -1141,7 +1381,7 @@ enum Rating {
   NEUTRAL
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar RequestId
 
 """States from requesting to publishing a written exam."""
@@ -1179,6 +1419,20 @@ input RestrictedDocumentInput {
   writtenExamData: WrittenExamData
 }
 
+"""
+Input for updating documents with restricted permissions.
+Values that are null are not updated. The writtenExamData field can be
+used if and only if the type of the document is a written exam.
+"""
+input RestrictedDocumentUpdateInput {
+  date: Date
+  examinerIds: [ExaminerId!]
+  lectureIds: [LectureId!]
+  semester: Semester
+  type: DocumentType
+  writtenExamData: WrittenExamData
+}
+
 union ReturnDepositResult = GeneralError | InvalidIdError | Transaction
 
 """
@@ -1212,6 +1466,14 @@ type StringTooLargeError implements Error {
 }
 
 """
+Input for either replacing or deleting an optional string. If `value` is
+null, the string is deleted.
+"""
+input StringUpdateInput {
+  value: String
+}
+
+"""
 A monetary transaction recorded for accounting. Once recorded, a
 transaction can not be modified. If a transaction needs to be undone,
 this can be achieved via a new (cancellation) transaction.
@@ -1237,7 +1499,7 @@ type Transaction {
   value: Money!
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar TransactionId
 
 """
@@ -1267,11 +1529,19 @@ scalar UUID
 
 union UpdateDepositResult = Deposit | GeneralError | InvalidIdError | StringTooLargeError
 
+"""Note that it is possible here to use `... on Document`."""
+union UpdateDocumentDataResult = GeneralError | InvalidIdError | OralExam | WrittenExam
+
+"""Note that it is possible here to use `... on Document`."""
+union UpdateDocumentFileResult = FileTooLargeError | GeneralError | InvalidIdError | OralExam | WrittenExam
+
 union UpdateExaminerResult = Examiner | GeneralError | InvalidIdError | StringTooLargeError
 
 union UpdateOrderResult = GeneralError | InvalidIdError | Order
 
 union UpdateUploadDepositResult = DocumentUpload | GeneralError | InvalidIdError
+
+union UpdateUploadStateResult = DocumentUpload | GeneralError | InvalidIdError
 
 union UpdateUploadTagResult = DocumentUpload | GeneralError | InvalidIdError | StringTooLargeError
 
@@ -1309,7 +1579,7 @@ input UploadFilter {
   tagIsPresent: Boolean
 }
 
-"""format: UUID string representation"""
+"""format: opaque string representation"""
 scalar UploadId
 
 union UploadResult = DocumentUpload | FileTooLargeError | GeneralError | InvalidIdError
@@ -1328,6 +1598,22 @@ enum UploadState {
 
   """Upload was checked and the deposit should _not_ be returned."""
   REJECTED
+}
+
+"""
+Input for updating data related to the state of an upload.
+Values that are null are not updated.
+"""
+input UploadStateInput {
+  depositAvailable: Boolean
+
+  """
+  Warning: Setting rewardAvailable to true might be ignored (i.e., the
+  reward might still not be available) depending on the reward policy of
+  the server.
+  """
+  rewardAvailable: Boolean
+  state: UploadState
 }
 
 union UploadWithTagResult = DocumentUpload | FileTooLargeError | GeneralError | InvalidIdError | StringTooLargeError
@@ -1367,6 +1653,11 @@ type WrittenExam implements Document {
   file: Url
   id: DocumentId!
   internalComment: String
+
+  """
+  Timestamp of last change to the associated file
+  (or the creation of the document, if no file exists).
+  """
   lastUpdated: DateTime!
   lectures: [Lecture!]!
 
