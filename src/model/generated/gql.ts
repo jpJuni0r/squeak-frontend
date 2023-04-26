@@ -26,6 +26,8 @@ const documents = {
     "\nmutation createOrder(\n  $tag: String,\n  $documents: [DocumentId!]!,\n) {\n  createOrder(\n    tag: $tag,\n    documents: $documents\n  ) {\n    __typename\n    ... on Order {\n      id\n      tag\n    }\n    ... on InvalidIdError {\n      msg\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n  }\n}\n": types.CreateOrderDocument,
     "\nquery siteConfiguration {\n  config {\n    siteName\n    printers {\n      id\n      name\n      accountingPositions {\n        id\n        name\n      }\n    }\n    currency {\n      code\n      symbol\n      minorDigits\n    }\n  }\n}\n": types.SiteConfigurationDocument,
     "\nmutation login($username: String!, $password: String!) {\n  login(username: $username, password: $password) {\n    __typename\n    ... on Error {\n      msg\n    }\n    ... on Credentials {\n      token\n      user {\n        username\n        displayName\n      }\n      permissions\n    }\n    ... on GeneralError {\n      msg\n    }\n  }\n}": types.LoginDocument,
+    "\nmutation createUploadForTag(\n  $tag: String\n  $data: RestrictedDocumentInput!\n  $file: Upload!\n) {\n  createUploadForTag(\n    tag: $tag\n    data: $data\n    file: $file\n  ) {\n    ... on DocumentUpload {\n      id\n      rewardAvailable\n      tag\n    }\n    ... on InvalidIdError {\n      msg\n    }\n    ... on FileTooLargeError {\n      msg\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n": types.CreateUploadForTagDocument,
+    "\nquery studentSubmissionMeta {\n  lectures {\n    id\n    displayName\n  }\n  examiners {\n    id\n    displayName\n  }\n}\n": types.StudentSubmissionMetaDocument,
     "\nquery permissions {\n  me {\n    permissions\n  }\n}\n": types.PermissionsDocument,
 };
 
@@ -95,6 +97,14 @@ export function gql(source: "\nquery siteConfiguration {\n  config {\n    siteNa
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "\nmutation login($username: String!, $password: String!) {\n  login(username: $username, password: $password) {\n    __typename\n    ... on Error {\n      msg\n    }\n    ... on Credentials {\n      token\n      user {\n        username\n        displayName\n      }\n      permissions\n    }\n    ... on GeneralError {\n      msg\n    }\n  }\n}"): (typeof documents)["\nmutation login($username: String!, $password: String!) {\n  login(username: $username, password: $password) {\n    __typename\n    ... on Error {\n      msg\n    }\n    ... on Credentials {\n      token\n      user {\n        username\n        displayName\n      }\n      permissions\n    }\n    ... on GeneralError {\n      msg\n    }\n  }\n}"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nmutation createUploadForTag(\n  $tag: String\n  $data: RestrictedDocumentInput!\n  $file: Upload!\n) {\n  createUploadForTag(\n    tag: $tag\n    data: $data\n    file: $file\n  ) {\n    ... on DocumentUpload {\n      id\n      rewardAvailable\n      tag\n    }\n    ... on InvalidIdError {\n      msg\n    }\n    ... on FileTooLargeError {\n      msg\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"): (typeof documents)["\nmutation createUploadForTag(\n  $tag: String\n  $data: RestrictedDocumentInput!\n  $file: Upload!\n) {\n  createUploadForTag(\n    tag: $tag\n    data: $data\n    file: $file\n  ) {\n    ... on DocumentUpload {\n      id\n      rewardAvailable\n      tag\n    }\n    ... on InvalidIdError {\n      msg\n    }\n    ... on FileTooLargeError {\n      msg\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nquery studentSubmissionMeta {\n  lectures {\n    id\n    displayName\n  }\n  examiners {\n    id\n    displayName\n  }\n}\n"): (typeof documents)["\nquery studentSubmissionMeta {\n  lectures {\n    id\n    displayName\n  }\n  examiners {\n    id\n    displayName\n  }\n}\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

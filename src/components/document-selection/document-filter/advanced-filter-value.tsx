@@ -2,7 +2,7 @@ import React from "react"
 import {FieldSemantics} from "@/components/document-selection/document-filter/advanced-filter-modal";
 import SelectAutocompleteField from "@/components/form/select-autocomplete-field";
 import TextField from "@/components/form/text-field";
-import {SelectOption} from "@/components/form/select-field";
+import {semesterOptions} from "@/shared/enum-select-options";
 
 interface Props {
   name: string;
@@ -40,23 +40,7 @@ const AdvancedFilterValue = ({ name, semantics }: Props) => {
         options={semantics.options}
       />
     case "semester":
-      const minYear = 2015
-      const currentYear = new Date().getUTCFullYear()
-      const listOfYears = new Array(currentYear - minYear + 1).fill(null)
-        .map((_, index) => minYear + index)
-      const options: SelectOption[] = listOfYears
-        .map(year => [{
-          label: `SS ${year}`,
-          value: `WS ${year}`,
-        }])
-        .flat()
-        .reverse()
-
-      return <SelectAutocompleteField
-        name={name}
-        label={label}
-        options={options}
-      />
+      return <SelectAutocompleteField name={name} label={label} options={semesterOptions}/>
     default:
       // @ts-ignore
       return <div className="text-danger">Unknown kind: {semantics.kind}</div>

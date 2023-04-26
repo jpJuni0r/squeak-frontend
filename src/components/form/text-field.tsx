@@ -32,7 +32,7 @@ const TextField = ({ name, label, type, placeholder, validate, pattern, isRequir
           <input
             type={type}
             {...input}
-            className={`form-control${meta.error ? " is-invalid" : ""}`}
+            className={`form-control${(meta.touched && meta.error) ? " is-invalid" : ""}`}
             id={input.name}
             placeholder={placeholder}
             pattern={pattern}

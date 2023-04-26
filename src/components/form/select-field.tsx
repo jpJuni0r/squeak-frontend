@@ -10,7 +10,7 @@ interface Props {
 
 export interface SelectOption {
   label: string;
-  value: string | number;
+  value: string;
 }
 
 // field value is `{label: string, value: string}`

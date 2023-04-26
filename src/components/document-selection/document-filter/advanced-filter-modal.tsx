@@ -1,16 +1,21 @@
 import React, {useMemo} from "react"
 import {Modal} from "react-bootstrap";
-import {Field, Form, FormSpy} from "react-final-form";
+import {Form} from "react-final-form";
 import {SelectOption} from "@/components/form/select-field";
-import {DocumentFilter, Rating, DocumentType, RequestState, UploadState} from "@/model/generated/graphql";
+import {DocumentFilter, Rating} from "@/model/generated/graphql";
 import SelectAutocompleteField from "@/components/form/select-autocomplete-field";
 import AdvancedFilterValue from "@/components/document-selection/document-filter/advanced-filter-value";
+import {
+  documentTypeOptions,
+  ratingOptions,
+  requestStateOptions,
+  uploadStateOptions
+} from "@/shared/enum-select-options";
 
 interface Props {
   show: boolean;
   hideModal: (filter?: DocumentFilter) => void;
 }
-
 
 type IgnoredKeys = "id" | "lectureIds" | "examinerIds"
 type Keys = Exclude<keyof DocumentFilter, IgnoredKeys>
@@ -37,19 +42,7 @@ const semantics: { kind: Keys, semantics: FieldSemantics }[] = [
     kind: "documentType",
     semantics: {
       kind: "enum",
-      options: [{
-        label: "Oral Exam",
-        value: DocumentType.OralExam,
-      }, {
-        label: "Oral Re-Exam",
-        value: DocumentType.OralReexam,
-      }, {
-        label: "Written Exam",
-        value: DocumentType.WrittenExam,
-      }, {
-        label: "Written Mock",
-        value: DocumentType.WrittenMock,
-      }],
+      options: documentTypeOptions,
     },
   },
   {
@@ -98,38 +91,14 @@ const semantics: { kind: Keys, semantics: FieldSemantics }[] = [
     kind: "rating",
     semantics: {
       kind: "enum",
-      options: [{
-        label: "Excellent",
-        value: Rating.Excellent,
-      }, {
-        label: "Needs Improvement",
-        value: Rating.NeedsImprovement,
-      }, {
-        label: "Neutral",
-        value: Rating.Neutral,
-      }],
+      options: ratingOptions,
     },
   },
   {
     kind: "requestState",
     semantics: {
       kind: "enum",
-      options: [{
-        label: "Done",
-        value: RequestState.Done,
-      }, {
-        label: "New",
-        value: RequestState.New,
-      }, {
-        label: "Rejected",
-        value: RequestState.Rejected,
-      }, {
-        label: "Requested",
-        value: RequestState.Requested,
-      }, {
-        label: "Todo",
-        value: RequestState.Todo,
-      }],
+      options: requestStateOptions,
     },
   },
   {
@@ -148,16 +117,7 @@ const semantics: { kind: Keys, semantics: FieldSemantics }[] = [
     kind: "uploadState",
     semantics: {
       kind: "enum",
-      options: [{
-        label: "Approved",
-        value: UploadState.Approved,
-      }, {
-        label: "Pending",
-        value: UploadState.Pending,
-      }, {
-        label: "Rejected",
-        value: UploadState.Rejected
-      }],
+      options: uploadStateOptions,
     },
   },
 ]
@@ -249,7 +209,7 @@ const AdvancedFilterModal = ({show, hideModal}: Props) => {
     <Form<FormValues>
       onSubmit={onSubmit}
       initialValues={initialValues}
-      render={({handleSubmit, values }) => (
+      render={({handleSubmit, values}) => (
         <Modal show={show} onHide={hideModal}>
           <Modal.Header closeButton>
             <Modal.Title>

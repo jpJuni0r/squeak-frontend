@@ -1,6 +1,7 @@
 import React, {useContext, useMemo} from "react"
-import {ApolloClient, ApolloProvider, createHttpLink, InMemoryCache} from "@apollo/client";
+import {ApolloClient, ApolloProvider, InMemoryCache} from "@apollo/client";
 import { setContext } from '@apollo/client/link/context';
+import { createUploadLink } from "apollo-upload-client"
 
 import {UserContext} from "@/context/user";
 import {BACKEND_API} from "@/shared/config";
@@ -27,13 +28,13 @@ const MyApolloProvider = ({ children }: Props) => {
       }
     });
 
-    const httpLink = createHttpLink({
+    const fileUploadLink = createUploadLink({
       uri: BACKEND_API,
     })
 
     return new ApolloClient({
       cache: new InMemoryCache(),
-      link: authLink.concat(httpLink),
+      link: authLink.concat(fileUploadLink),
     });
   }, [token])
 

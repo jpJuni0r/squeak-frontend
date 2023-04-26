@@ -1,8 +1,9 @@
 import React from "react";
+import StudentSubmission from "@/components/student-submission/student-submission";
 
 const SubmitPage = () => {
   return (
-    <p>This is the submission page</p>
+    <StudentSubmission />
   );
 }
 

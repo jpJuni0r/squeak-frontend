@@ -8,19 +8,40 @@ interface Props<FieldValue> {
   label: string;
   options: FieldValue[];
   isMulti?: boolean;
+  isRequired?: boolean;
 }
 
-const SelectAutocompleteField = <FieldValue extends SelectOption,>({ name, label, options, isMulti }: Props<FieldValue>) => {
+const SelectAutocompleteField = <FieldValue extends SelectOption,>({ name, label, options, isMulti, isRequired }: Props<FieldValue>) => {
   return (
     <Field<FieldValue>
       name={name}
       type="select"
       multiple={isMulti}
+      validate={(x, fields) => {
+        const value = (fields as any)[name]
+        if (isMulti) {
+          if (!value || !value.length) {
+            return "Value is required"
+          }
+        } else {
+          if (!value) {
+            return "Value is required"
+          }
+        }
+        return null
+      }}
       render={({ input, meta }) => (
-        <div className="mb-3">
-          <label htmlFor={input.name}>{label}</label>
-          <Select {...input} isMulti={isMulti} options={options} placeholder={`Select ${isMulti ? "options" : "options" }...`} />
-          {meta.error && <small className="text-danger">{meta.error}</small>}
+        <div>
+          <label htmlFor={input.name}>{label}{isRequired? <span className="text-danger">*</span> : null}</label>
+          <Select
+            {...input}
+            isMulti={isMulti}
+            options={options}
+            placeholder={`Select ${isMulti ? "options" : "option" }...`}
+            required={isRequired}
+            className={(meta.touched && meta.error) ? "is-invalid" : undefined}
+          />
+          {meta.error && <small className="invalid-feedback">{meta.error}</small>}
         </div>
       )}
     />
