@@ -25,7 +25,7 @@ export interface LectureFormValues {
 /**
  * This component is meant to be placed only inside a modal.
  */
-const LectureForm = ({ faculties, initialValues, onSubmit, hideValidatedField }: Props) => {
+const LectureForm = ({faculties, initialValues, onSubmit, hideValidatedField}: Props) => {
   const options: SelectOption[] = faculties.map(f => ({
     label: f.displayName,
     value: f.id,
@@ -46,15 +46,15 @@ const LectureForm = ({ faculties, initialValues, onSubmit, hideValidatedField }:
     <Form<LectureFormValues>
       onSubmit={onSubmit}
       initialValues={patchedInitialValues}
-      render={({ handleSubmit, submitting, submitError, values }) => (
-        <form onSubmit={handleSubmit} className="vstack gap-3">
+      render={({handleSubmit, submitting, submitError}) => (
+        <form onSubmit={handleSubmit}>
           <Modal.Body>
             <div className="vstack gap-3">
-              <TextField name="name" label="Name" isRequired />
-              <SelectField name="facultyId" label="Faculty" options={options} />
-              <TextField name="comment" label="Comment" />
+              <TextField name="name" label="Name" isRequired/>
+              <SelectField name="facultyId" label="Faculty" options={options}/>
+              <TextField name="comment" label="Comment"/>
               {!hideValidatedField && (
-                <CheckboxField name="validated" label="Validated" />
+                <CheckboxField name="validated" label="Validated"/>
               )}
               {submitError && <div className="text-danger">{submitError}</div>}
             </div>

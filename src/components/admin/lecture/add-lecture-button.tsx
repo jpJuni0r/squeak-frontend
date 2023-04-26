@@ -42,19 +42,21 @@ mutation createLecture(
 }
 `)
 
-const AddLectureButton = ({ faculties, refresh }: Props) => {
+const AddLectureButton = ({faculties, refresh}: Props) => {
   const [show, setShow] = useState(false)
   const [createLecture] = useMutation(createLectureMutation, {errorPolicy: "all"})
 
   const onSubmit: Config<LectureFormValues>["onSubmit"] = async (values) => {
-    const response = await createLecture({variables: {
+    const response = await createLecture({
+      variables: {
         data: {
           name: values.name!,
           comment: values.comment || null,
           facultyId: values.facultyId!,
         },
         validated: values.validated || false,
-      }})
+      },
+    })
 
     if (response.errors) {
       return {
@@ -78,13 +80,13 @@ const AddLectureButton = ({ faculties, refresh }: Props) => {
   return (
     <>
       <button type="button" className="btn btn-outline-primary" onClick={() => setShow(true)}>
-        <Plus /> Add Lecture
+        <Plus/> Add Lecture
       </button>
       <Modal show={show} onHide={() => setShow(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Add Lecture</Modal.Title>
         </Modal.Header>
-        <LectureForm faculties={faculties} onSubmit={onSubmit} />
+        <LectureForm faculties={faculties} onSubmit={onSubmit}/>
       </Modal>
     </>
   )

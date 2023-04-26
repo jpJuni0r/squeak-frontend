@@ -13,6 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
+    "\nmutation createExaminer(\n  $data: ExaminerInput!\n  $validated: Boolean!\n) {\n  createExaminer(\n    data: $data\n    validated: $validated\n  ) {\n    ... on Examiner {\n      id\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n": types.CreateExaminerDocument,
     "\nquery examiners {\n  examiners {\n    id\n    name\n    validated\n    displayName\n    institute \n  }\n}\n": types.ExaminersDocument,
     "\nquery faculties {\n    faculties {\n        id\n        displayName\n    }\n}\n": types.FacultiesDocument,
     "\nmutation createLecture(\n  $data: LectureInput!\n  $validated: Boolean!\n) {\n   createLecture(data: $data, validated: $validated) {\n    __typename\n    ... on Lecture {\n      id\n    }\n    ... on InvalidIdError {\n      errorCode\n      msg\n    }\n    ... on GeneralError {\n      errorCode\n      msg\n    }\n    ... on StringTooLargeError {\n      errorCode\n      msg\n    }\n    ... on Error {\n      errorCode\n      msg\n    }\n  }\n}\n": types.CreateLectureDocument,
@@ -42,6 +43,10 @@ const documents = {
  */
 export function gql(source: string): unknown;
 
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nmutation createExaminer(\n  $data: ExaminerInput!\n  $validated: Boolean!\n) {\n  createExaminer(\n    data: $data\n    validated: $validated\n  ) {\n    ... on Examiner {\n      id\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"): (typeof documents)["\nmutation createExaminer(\n  $data: ExaminerInput!\n  $validated: Boolean!\n) {\n  createExaminer(\n    data: $data\n    validated: $validated\n  ) {\n    ... on Examiner {\n      id\n    }\n    ... on StringTooLargeError {\n      msg\n    }\n    ... on GeneralError {\n      msg\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

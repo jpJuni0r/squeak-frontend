@@ -17,7 +17,7 @@ query examiners {
 `)
 
 const ExaminersListContainer = () => {
-  const { data, loading, error } = useQuery(examinersQuery)
+  const { data, loading, error, refetch } = useQuery(examinersQuery)
 
   if (loading) {
     return <Spinner />
@@ -26,7 +26,7 @@ const ExaminersListContainer = () => {
   }
 
   return (
-    <ExaminersListComponent examiners={data!.examiners} />
+    <ExaminersListComponent examiners={data!.examiners} refresh={refetch}/>
   )
 }
 
