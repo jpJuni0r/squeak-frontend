@@ -44,7 +44,7 @@ mutation createLecture(
 
 const AddLectureButton = ({faculties, refresh}: Props) => {
   const [show, setShow] = useState(false)
-  const [createLecture] = useMutation(createLectureMutation, {errorPolicy: "all"})
+  const [createLecture] = useMutation(createLectureMutation, {errorPolicy: "none"})
 
   const onSubmit: Config<LectureFormValues>["onSubmit"] = async (values) => {
     const response = await createLecture({

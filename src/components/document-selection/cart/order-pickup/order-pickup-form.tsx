@@ -42,8 +42,8 @@ interface FormValues {
   tag?: string;
 }
 
-const FinalizeOrderForm = ({docs, closeModal}: Props) => {
-  const [order] = useMutation(orderMutation, {errorPolicy: "all"})
+const OrderPickupForm = ({docs, closeModal}: Props) => {
+  const [order] = useMutation(orderMutation, {errorPolicy: "none"})
 
   const onSubmit = async (values: FormValues) => {
     const res = await order({
@@ -108,4 +108,4 @@ const FinalizeOrderForm = ({docs, closeModal}: Props) => {
   )
 }
 
-export default FinalizeOrderForm
+export default OrderPickupForm

@@ -1,13 +1,13 @@
 import React, {useState} from "react"
 import {DocumentsQuery} from "@/model/generated/graphql";
 import {Modal} from "react-bootstrap";
-import FinalizeOrderForm from "@/components/document-selection/finalize-order/finalize-order-form";
+import OrderPickupForm from "@/components/document-selection/cart/order-pickup/order-pickup-form";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
 }
 
-const FinalizeOrderButton = ({docs}: Props) => {
+const OrderPickupButton = ({docs}: Props) => {
   const [showModal, setShowModal] = useState(false)
 
   return (
@@ -21,10 +21,10 @@ const FinalizeOrderButton = ({docs}: Props) => {
             Order Documents
           </Modal.Title>
         </Modal.Header>
-        <FinalizeOrderForm docs={docs} closeModal={() => setShowModal(false)} />
+        <OrderPickupForm docs={docs} closeModal={() => setShowModal(false)} />
       </Modal>
     </>
   )
 }
 
-export default FinalizeOrderButton
+export default OrderPickupButton

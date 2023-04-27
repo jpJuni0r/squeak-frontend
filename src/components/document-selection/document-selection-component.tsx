@@ -3,7 +3,6 @@ import {DocumentFilter, DocumentsQuery, Examiner, Lecture} from "@/model/generat
 import DocumentsListContainer from "@/components/document-selection/documents-list/documents-list";
 import Cart from "@/components/document-selection/cart/cart";
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
-import advancedFilter from "@/components/document-selection/document-filter/advanced-filter";
 
 interface Props {
   allLectures: Lecture[],

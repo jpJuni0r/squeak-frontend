@@ -37,7 +37,7 @@ mutation createExaminer(
 
 const AddExaminerButton = ({refresh} : Props) => {
   const [show, setShow] = useState(false)
-  const [createExaminer] = useMutation(createExaminerMutation, {errorPolicy: "all"})
+  const [createExaminer] = useMutation(createExaminerMutation, {errorPolicy: "none"})
 
   const onSubmit: Config<ExaminerFormValues>["onSubmit"] = async (values) => {
     const response = await createExaminer({

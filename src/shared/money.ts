@@ -1,6 +1,6 @@
 export default class Money {
   constructor(
-    private readonly amount: number
+    readonly amount: number
   ) {
   }
 
@@ -35,6 +35,13 @@ export default class Money {
 
   static fromMinorUnit(minor: number): Money {
     return new Money(minor * this.FACTOR)
+  }
+
+  /**
+   * This assumes a factor of 100 between "cents" and a major unit.
+   */
+  static fromMajorUnit(major: number): Money {
+    return Money.fromMinorUnit(major * 100)
   }
 
   /**
