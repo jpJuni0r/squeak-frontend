@@ -4,6 +4,7 @@ import {gql} from "@/model/generated";
 import {useQuery} from "@apollo/client";
 import {SiteConfiguration, SiteConfigurationContext} from "@/context/site-configuration";
 import {Field} from "react-final-form";
+import Money from "@/shared/money";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
@@ -40,7 +41,7 @@ function currencySignToCurrency(sign: string) {
   }
 }
 
-const majorMoneyToText = (minorMoney: number, siteConfiguration: SiteConfiguration) => {
+const moneyToText = (money: Money, siteConfiguration: SiteConfiguration) => {
   // This uses the browsers locale to select a fraction separator
   const formatter = new Intl.NumberFormat(undefined, {
     style: "currency",
@@ -49,7 +50,7 @@ const majorMoneyToText = (minorMoney: number, siteConfiguration: SiteConfigurati
     maximumFractionDigits: siteConfiguration.currency.minorDigits,
   })
 
-  return formatter.format(minorMoney)
+  return formatter.format(money.toMajorUnit())
 }
 const PriceTag = ({ docs, numOralExamDeposits, donation, resultFormFieldName }: Props) => {
   const { data, previousData, loading, error } = useQuery(priceQuery, {
@@ -60,28 +61,28 @@ const PriceTag = ({ docs, numOralExamDeposits, donation, resultFormFieldName }: 
   })
   const siteConfiguration = useContext(SiteConfigurationContext);
 
-  let amount = data?.price || 0
+  let amount = new Money(data?.price || 0)
 
   if (loading) {
     if (!previousData) {
       return <span className="price-tag text-muted">…</span>
     } else {
-      amount = previousData.price!
+      amount = new Money(previousData.price!)
     }
-  } if (error) {
+  } else if (error) {
     return <span className="text-danger">{error.message}</span>
   } else if (data!.price === null) {
     return <span className="text-danger">Price calculation failed</span>
   }
 
   if (donation !== undefined) {
-    amount += donation
+    amount = amount.add(Money.fromMajorUnit(donation))
   }
 
   return (
     <>
       <span className="price-tag">
-        {majorMoneyToText(amount, siteConfiguration)}
+        {moneyToText(amount, siteConfiguration)}
       </span>
       {resultFormFieldName && (
         <Field name={resultFormFieldName} value={amount} render={() => null} />
