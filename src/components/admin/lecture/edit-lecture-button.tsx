@@ -1,11 +1,11 @@
-import React, {useState} from "react"
-import {Faculty, Lecture} from "@/model/generated/graphql";
-import {gql} from "@/model/generated";
+import React, {useMemo, useState} from "react"
 import {useMutation} from "@apollo/client";
 import {Config, FORM_ERROR} from "final-form";
-import LectureForm, {LectureFormValues} from "@/components/admin/lecture/lecture-form";
 import {Pencil} from "react-bootstrap-icons";
 import {Modal} from "react-bootstrap";
+import LectureForm, {LectureFormValues} from "@/components/admin/lecture/lecture-form";
+import {Faculty, Lecture} from "@/model/generated/graphql";
+import {gql} from "@/model/generated";
 
 interface Props {
   lecture: Lecture;
@@ -38,12 +38,42 @@ mutation updateLecture(
 }
 `)
 
+const updateLectureAliasesMutation = gql(`
+mutation updateLectureAliases(
+  $lectureId: LectureId!
+  $aliases: [String!]!
+) {
+  updateLectureAliases(
+    lectureId: $lectureId
+    aliases: $aliases,
+    removeExisting: true
+  ) {
+    ... on Lecture {
+      id
+    }
+    ... on InvalidIdError {
+      msg
+    }
+    ... on GeneralError {
+      msg
+    }
+    ... on StringTooLargeError {
+      msg
+    }
+    ... on Error {
+      msg
+    }
+  }
+}
+`)
+
 const EditLectureButton = ({ lecture, faculties, refresh}: Props) => {
   const [show, setShow] = useState(false)
   const [updateLecture] = useMutation(updateLectureMutation)
+  const [updateLectureAliases] = useMutation(updateLectureAliasesMutation)
 
   const onSubmit: Config<LectureFormValues>["onSubmit"] = async (values) => {
-    const response = await updateLecture({variables: {
+    const lectureResponse = await updateLecture({variables: {
         data: {
           name: values.name!,
           comment: {
@@ -54,18 +84,45 @@ const EditLectureButton = ({ lecture, faculties, refresh}: Props) => {
         lectureId: lecture.id,
       }})
 
-    if (response.errors) {
+    if (lectureResponse.errors) {
       return {
-        [FORM_ERROR]: response.errors.map(e => e.message).join(", ")
+        [FORM_ERROR]: lectureResponse.errors.map(e => e.message).join(", ")
       }
     }
 
-    if (response.data!.updateLecture.__typename === "InvalidIdError"
-      || response.data!.updateLecture.__typename === "StringTooLargeError"
-      || response.data!.updateLecture.__typename === "GeneralError") {
+    if (lectureResponse.data!.updateLecture.__typename === "InvalidIdError"
+      || lectureResponse.data!.updateLecture.__typename === "StringTooLargeError"
+      || lectureResponse.data!.updateLecture.__typename === "GeneralError") {
 
       return {
-        [FORM_ERROR]: response.data!.updateLecture.msg
+        [FORM_ERROR]: lectureResponse.data!.updateLecture.msg
+      }
+    }
+
+    const lectureAliasesResponse = await updateLectureAliases({
+      variables: {
+        lectureId: lecture.id,
+        aliases: values.aliases.map(a => a.value),
+      },
+    })
+
+    if (lectureAliasesResponse.errors) {
+      return {
+        [FORM_ERROR]: lectureResponse.errors,
+      }
+    }
+
+    if (
+      lectureAliasesResponse.data?.updateLectureAliases.__typename === "InvalidIdError"
+      || lectureAliasesResponse.data?.updateLectureAliases.__typename === "GeneralError"
+      || lectureAliasesResponse.data?.updateLectureAliases.__typename === "StringTooLargeError"
+    ) {
+      return {
+        [FORM_ERROR]: lectureAliasesResponse.data!.updateLectureAliases.msg
+      }
+    } else if (lectureAliasesResponse.data?.updateLectureAliases.__typename !== "Lecture") {
+      return {
+        [FORM_ERROR]: `Received an unknown response to update lecture aliases: ${lectureAliasesResponse.data?.updateLectureAliases.__typename}`,
       }
     }
 
@@ -73,11 +130,15 @@ const EditLectureButton = ({ lecture, faculties, refresh}: Props) => {
     refresh()
   }
 
-  const initialValues: LectureFormValues = {
+  const initialValues: LectureFormValues = useMemo(() => ({
     name: lecture.displayName,
     validated: lecture.validated,
     comment: lecture.comment || undefined,
-  }
+    aliases: lecture.aliases.map(alias => ({
+      label: alias,
+      value: alias,
+    })),
+  }), [lecture])
 
   return (
     <>
@@ -88,7 +149,13 @@ const EditLectureButton = ({ lecture, faculties, refresh}: Props) => {
         <Modal.Header closeButton>
           <Modal.Title>Edit {lecture.displayName}</Modal.Title>
         </Modal.Header>
-        <LectureForm faculties={faculties} onSubmit={onSubmit} initialValues={initialValues} hideValidatedField />
+        <LectureForm
+          faculties={faculties}
+          onSubmit={onSubmit}
+          initialValues={initialValues}
+          hideValidatedField
+          showAliasesField
+        />
       </Modal>
     </>
   )

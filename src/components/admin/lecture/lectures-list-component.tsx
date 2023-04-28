@@ -20,6 +20,9 @@ const LecturesListComponent = ({lectures, faculties, refresh}: Props) => {
           <li className="list-group-item d-flex" key={lecture.id}>
             <div className="flex-grow-1">
               {lecture.displayName}
+              {Boolean(lecture.aliases.length) && (
+                <span> ({lecture.aliases.join(", ")})</span>
+              )}
               {lecture.comment && (
                 <small>
                   <b className="mx-1">&middot;</b>
