@@ -33,7 +33,11 @@ const DocumentSelectionComponent = ({allLectures, allExaminers}: Props) => {
           />
         </div>
         <div className="col-md-4">
-          <Cart selectedDocuments={selectedDocuments} clearDocuments={clearDocuments}/>
+          <Cart
+            selectedDocuments={selectedDocuments}
+            setSelectedDocuments={setSelectedDocuments}
+            clearDocuments={clearDocuments}
+          />
         </div>
       </div>
     </div>

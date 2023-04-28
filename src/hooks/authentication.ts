@@ -10,14 +10,6 @@ import {gql} from "@/model/generated";
 
 const STORAGE_TOKEN_KEY = "token"
 
-const permissionsQuery = gql(`
-query permissions {
-  me {
-    permissions
-  }
-}
-`)
-
 /**
  * This hook is called once a successful authentication request happens.
  * It persists the session token and stores the users' profile information
@@ -38,15 +30,12 @@ export const useProcessAuthentication = () => {
 
 export const useLogout = () => {
   const {setUserContext} = useContext(UserContext)
-  const client = useApolloClient()
   return async () => {
     await setSessionToken(null)
-    const res = await client.query({ query: permissionsQuery })
-    let permissions: Permission[] = []
-    if (res.data) {
-      permissions = res.data.me.permissions
-    }
-    setUserContext({ status: "signed-out", permissions })
+    // We cannot use apollo client here, because the `setSessionToken(null)`
+    // will not immediately clear the session token.
+    const session = await getUserSession()
+    setUserContext({ status: "signed-out", permissions: session.permissions })
   }
 }
 

@@ -11,7 +11,7 @@ interface Props {
   setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
 }
 
-const documentsQuery = gql(`
+export const documentsQuery = gql(`
 query documents($filters: [DocumentFilter!]!) {
   documents(filters: $filters, count: 10) {
     results {
