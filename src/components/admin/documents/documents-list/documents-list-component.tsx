@@ -1,10 +1,10 @@
 import React from "react"
-import {DocumentsQuery} from "@/model/generated/graphql";
+import {AdminDocumentsQuery} from "@/model/generated/graphql";
 import DocumentAttributeIcons from "@/components/document-selection/documents-list/document-attribute-icons";
 import DocumentEditButton from "@/components/admin/documents/documents-list/document-edit-button";
 
 interface Props {
-  documents: DocumentsQuery["documents"],
+  documents: AdminDocumentsQuery["documents"],
   refetch: () => void;
 }
 

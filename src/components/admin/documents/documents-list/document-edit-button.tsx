@@ -1,11 +1,11 @@
 import React, {useState} from "react"
-import {DocumentsQuery} from "@/model/generated/graphql";
+import {AdminDocumentsQuery} from "@/model/generated/graphql";
 import {Pencil} from "react-bootstrap-icons";
 import {Modal} from "react-bootstrap";
 import DocumentEditFormContainer from "@/components/admin/documents/documents-list/document-edit-form-container";
 
 interface Props {
-  doc: DocumentsQuery["documents"]["results"][0],
+  doc: AdminDocumentsQuery["documents"]["results"][0],
   refetch: () => void
 }
 

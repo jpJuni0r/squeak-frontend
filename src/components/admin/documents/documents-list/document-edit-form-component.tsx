@@ -1,5 +1,6 @@
 import React, {useMemo} from "react"
 import {
+  AdminDocumentsQuery,
   DocumentsQuery,
   DocumentType,
   DocumentUpdateInput,
@@ -24,7 +25,7 @@ import {useMutation} from "@apollo/client";
 import {FORM_ERROR} from "final-form";
 
 interface Props {
-  doc: DocumentsQuery["documents"]["results"][0]
+  doc: AdminDocumentsQuery["documents"]["results"][0]
   lectures: EditDocumentMetaQuery["lectures"]
   examiners: EditDocumentMetaQuery["examiners"]
   refetchAndCloseModal: () => void

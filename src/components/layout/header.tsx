@@ -5,11 +5,12 @@ import {PersonFill} from "react-bootstrap-icons";
 import {useRouter} from "next/router";
 
 import { UserContext } from "@/context/user";
+import {Permission} from "@/model/generated/graphql";
 
 const Header = () => {
   const router = useRouter();
   const {userContext} = useContext(UserContext);
-  const links: { title: string; href: string; }[] = [
+  const links: { title: string; href: string; requiresPermission?: Permission }[] = [
     {
       title: "Select documents",
       href: "/",
@@ -22,8 +23,13 @@ const Header = () => {
     {
       title: "Admin",
       href: "/admin",
+      requiresPermission: Permission.AccessInternalDocumentData,
     },
   ];
+
+  const accessibleLinks = links.filter(link => {
+    return !link.requiresPermission || userContext.permissions.includes(link.requiresPermission)
+  })
 
   return (
     <header>
@@ -35,7 +41,7 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav"/>
           <Navbar.Collapse>
             <Nav className="flex-grow-1">
-              {links.map(link => (
+              {accessibleLinks.map(link => (
                 <div className="nav-item" key={link.href}>
                   <Link className={`nav-link${router.pathname === link.href ? " active" : ""}`} href={link.href}>
                     {link.title}

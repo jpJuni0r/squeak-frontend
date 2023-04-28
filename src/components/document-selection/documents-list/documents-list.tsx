@@ -11,8 +11,7 @@ interface Props {
   setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
 }
 
-// This query is shared with the admin panel
-export const documentsQuery = gql(`
+const documentsQuery = gql(`
 query documents($filters: [DocumentFilter!]!) {
   documents(filters: $filters, count: 10) {
     results {
@@ -22,7 +21,6 @@ query documents($filters: [DocumentFilter!]!) {
       semester
       public
       publicComment
-      internalComment
       publishedOn
       downloadable
       rating
