@@ -1,4 +1,4 @@
-import React, {useEffect} from "react"
+import React from "react"
 import {DocumentFilter, DocumentsQuery} from "@/model/generated/graphql";
 import {gql} from "@/model/generated";
 import Spinner from "@/components/spinner/spinner";
@@ -11,7 +11,8 @@ interface Props {
   setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
 }
 
-const documentsQuery = gql(`
+// This query is shared with the admin panel
+export const documentsQuery = gql(`
 query documents($filters: [DocumentFilter!]!) {
   documents(filters: $filters, count: 10) {
     results {
@@ -21,6 +22,7 @@ query documents($filters: [DocumentFilter!]!) {
       semester
       public
       publicComment
+      internalComment
       publishedOn
       downloadable
       rating
@@ -33,6 +35,9 @@ query documents($filters: [DocumentFilter!]!) {
       lectures {
         id
         displayName
+      }
+      ... on WrittenExam {
+        solution
       }
     }
     cursor
@@ -55,7 +60,7 @@ const DocumentsListContainer = ({filters, selectedDocuments, setSelectedDocument
   } else {
     return (
       <DocumentsListComponent
-        documents={data!.documents.results}
+        documents={data!.documents}
         selectedDocuments={selectedDocuments}
         setSelectedDocuments={setSelectedDocuments}
       />

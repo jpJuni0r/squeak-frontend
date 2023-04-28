@@ -4,7 +4,8 @@ import {useQuery} from "@apollo/client";
 import Spinner from "@/components/spinner/spinner";
 import DocumentSelectionComponent from "@/components/document-selection/document-selection-component";
 
-const filterMetaQuery = gql(`
+// This query is shared with the admin panel
+export const filterMetaQuery = gql(`
 query filterMeta {
   examiners {
     id

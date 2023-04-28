@@ -1,39 +1,19 @@
-import React, {useCallback, useMemo, useState} from "react"
-import {DocumentFilter, DocumentsQuery, Examiner, Lecture} from "@/model/generated/graphql";
+import React, {useCallback, useState} from "react"
+import {DocumentsQuery, Examiner, Lecture} from "@/model/generated/graphql";
 import DocumentsListContainer from "@/components/document-selection/documents-list/documents-list";
 import Cart from "@/components/document-selection/cart/cart";
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
+import {useDocumentsFilter} from "@/hooks/documents";
 
 interface Props {
   allLectures: Lecture[],
   allExaminers: Examiner[],
 }
 
-const defaultFilter: DocumentFilter = {
-  public: true
-}
-
 const DocumentSelectionComponent = ({allLectures, allExaminers}: Props) => {
-  const [filters, setFilters] = useState<DocumentFilter[]>([])
-  const [advancedFilters, setAdvancedFilters] = useState<DocumentFilter[]>([])
+  const {combinedFilters, setFilters, setAdvancedFilters} = useDocumentsFilter()
   const [selectedDocuments, setSelectedDocuments] = useState<DocumentsQuery["documents"]["results"]>([]);
   const clearDocuments = useCallback(() => setSelectedDocuments([]), [setSelectedDocuments])
-
-  const combinedFilters = useMemo(() => {
-      // We need to clear the clientId field from the AdvancedFilterItem type
-    const sanitizedAdvancedFilters = advancedFilters
-      .map(f => ({
-        ...f,
-        clientId: undefined,
-      }))
-    return [
-      defaultFilter,
-      ...filters,
-      ...sanitizedAdvancedFilters,
-    ]
-  },
-  [filters, advancedFilters]
-)
 
   return (
     <div className="container-fluid">

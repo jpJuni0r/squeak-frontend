@@ -7,7 +7,7 @@ import AdvancedFilterTag, {
 } from "@/components/document-selection/document-filter/advanced-filter-tag";
 
 interface Props {
-  setAdvancedFilters: Dispatch<SetStateAction<DocumentFilter[]>>
+  setAdvancedFilters: (filters: DocumentFilter[]) => void
 }
 
 const AdvancedFilter = ({ setAdvancedFilters }: Props) => {

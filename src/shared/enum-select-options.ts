@@ -1,5 +1,5 @@
 import {SelectOption} from "@/components/form/select-field";
-import {DocumentType, Rating, RequestState, UploadState} from "@/model/generated/graphql";
+import {DocumentType, Rating, RequestState, SolutionType, UploadState} from "@/model/generated/graphql";
 
 export const documentTypeOptions: SelectOption[] = [
   {
@@ -16,6 +16,21 @@ export const documentTypeOptions: SelectOption[] = [
     value: DocumentType.WrittenMock,
   }
 ]
+
+/**
+ * Converts a GraphQL typename to an enum
+ * @param typename
+ */
+export const documentTypeFromTypename = (typename: string): DocumentType => {
+  switch (typename) {
+    case "OralExam": return DocumentType.WrittenExam
+    case "OralReexam": return DocumentType.OralReexam
+    case "WrittenExam": return DocumentType.WrittenExam
+    case "WrittenMock": return DocumentType.WrittenMock
+    default:
+      throw new Error(`Unknown document type: ${typename}`)
+  }
+}
 
 export const ratingOptions: SelectOption[] = [
   {
@@ -78,3 +93,18 @@ export const semesterOptions: SelectOption[] = listOfYears
   }])
   .flat()
   .reverse()
+
+export const solutionTypeOptions: SelectOption[] = [
+  {
+    label: "None",
+    value: SolutionType.None,
+  },
+  {
+    label: "Official",
+    value: SolutionType.Official,
+  },
+  {
+    label: "Unofficial",
+    value: SolutionType.Unofficial,
+  },
+]

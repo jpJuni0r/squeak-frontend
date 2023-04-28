@@ -4,7 +4,7 @@ import DocumentAttributeIcons from "@/components/document-selection/documents-li
 import CartButton from "@/components/document-selection/documents-list/cart-button";
 
 interface Props {
-  documents: DocumentsQuery["documents"]["results"],
+  documents: DocumentsQuery["documents"],
   selectedDocuments: DocumentsQuery["documents"]["results"],
   setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
 }
@@ -25,11 +25,11 @@ const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocume
         </tr>
         </thead>
         <tbody>
-        {documents.map((doc, index) => (
+        {documents.results.map((doc, index) => (
           <tr key={doc.id}>
             <td className="text-end">{index + 1}</td>
             <td>
-              <DocumentAttributeIcons document={doc} />
+              <DocumentAttributeIcons document={doc}/>
             </td>
             <td>
               {doc.lectures.map(lecture => lecture.displayName).join(", ")}
@@ -46,7 +46,7 @@ const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocume
             </td>
           </tr>
         ))}
-        {!documents.length && (
+        {!documents.results.length && (
           <tr>
             <td colSpan={7} className="text-muted text-center">
               No documents found.

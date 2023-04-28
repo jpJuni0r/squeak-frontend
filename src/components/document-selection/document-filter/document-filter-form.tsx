@@ -6,8 +6,8 @@ import SearchField from "@/components/document-selection/document-filter/search-
 import AdvancedFilter from "@/components/document-selection/document-filter/advanced-filter";
 
 interface Props {
-  setFilters: Dispatch<SetStateAction<DocumentFilter[]>>
-  setAdvancedFilters: Dispatch<SetStateAction<DocumentFilter[]>>
+  setFilters: (filters: DocumentFilter[]) => void
+  setAdvancedFilters: (filters: DocumentFilter[]) => void
   allExaminers: Examiner[];
   allLectures: Lecture[];
 }

@@ -8,12 +8,16 @@ interface Tab {
 }
 
 export enum SettingsTabOption {
+  DOCUMENTS = "documents",
   LECTURES = "lectures",
   EXAMINERS = "examiners",
   FACULTIES = "faculties",
 }
 
 const tabs: Tab[] = [{
+  displayName: "Documents",
+  label: SettingsTabOption.DOCUMENTS,
+}, {
   displayName: "Lectures",
   label: SettingsTabOption.LECTURES,
 }, {
