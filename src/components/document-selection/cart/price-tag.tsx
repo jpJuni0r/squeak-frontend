@@ -1,10 +1,11 @@
-import React, {useContext} from "react"
+import React, {useContext, useEffect, useMemo} from "react"
 import {DocumentsQuery} from "@/model/generated/graphql";
 import {gql} from "@/model/generated";
 import {useQuery} from "@apollo/client";
 import {SiteConfiguration, SiteConfigurationContext} from "@/context/site-configuration";
-import {Field} from "react-final-form";
+import {useForm} from "react-final-form";
 import Money from "@/shared/money";
+import {OrderPrintFormValues} from "@/components/document-selection/cart/order-print/order-print-form";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
@@ -14,10 +15,9 @@ interface Props {
    */
   donation?: number
   /**
-   * When set, we'll render a form field value with the given name to
-   * make the value accessible externally.
+   * When set, we'll put the calculated price in a form value.
    */
-  resultFormFieldName?: string;
+  storePriceInField?: boolean;
 }
 
 const priceQuery = gql(`
@@ -52,7 +52,19 @@ const moneyToText = (money: Money, siteConfiguration: SiteConfiguration) => {
 
   return formatter.format(money.toMajorUnit())
 }
-const PriceTag = ({ docs, numOralExamDeposits, donation, resultFormFieldName }: Props) => {
+
+const StorePriceInField = ({price}: {price: Money}) => {
+  const form = useForm<OrderPrintFormValues>()
+  useEffect(() => {
+    form.change("price", price)
+    // Reduce number of re-renders for changes price instance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, price.amount])
+
+  return null
+}
+
+const PriceTag = ({ docs, numOralExamDeposits, donation, storePriceInField }: Props) => {
   const { data, previousData, loading, error } = useQuery(priceQuery, {
     variables: {
       documents: docs.map(d => d.id),
@@ -84,8 +96,8 @@ const PriceTag = ({ docs, numOralExamDeposits, donation, resultFormFieldName }: 
       <span className="price-tag">
         {moneyToText(amount, siteConfiguration)}
       </span>
-      {resultFormFieldName && (
-        <Field name={resultFormFieldName} value={amount} render={() => null} />
+      {storePriceInField && (
+        <StorePriceInField price={amount}/>
       )}
     </>
   )

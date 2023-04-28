@@ -12,6 +12,7 @@ import MoneyField from "@/components/form/money-field";
 import Money from "@/shared/money";
 import PriceTag from "@/components/document-selection/cart/price-tag";
 import {FORM_ERROR} from "final-form";
+import userContextProvider from "@/components/layout/user-context-provider";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
@@ -66,7 +67,7 @@ mutation printDocuments(
 }
 `)
 
-interface FormValues {
+export interface OrderPrintFormValues {
   tag?: string
   printer?: string
   "accountingPositions": {
@@ -74,14 +75,14 @@ interface FormValues {
   }
   donation?: string
   printFontPage?: boolean
-  price?: string;
+  price: Money;
 }
 
-const OrderPrintButton = ({docs}: Props) => {
+const OrderPrintButton = ({docs, closeModal}: Props) => {
   const context = useContext(SiteConfigurationContext)
   const [print] = useMutation(printDocumentsMutation, {errorPolicy: "none"})
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: OrderPrintFormValues) => {
     const donation = Money.fromMajorUnit(parseFloat(values.donation?.replace(",", ".") || "0"))
     const response = await print({
       variables: {
@@ -92,7 +93,7 @@ const OrderPrintButton = ({docs}: Props) => {
         deposits: docs.map(d => d.lectures.map(l => l.id)),
         documentList: docs.map(d => d.id),
         printFrontPage: values.printFontPage || false,
-        totalPrice: 0,
+        totalPrice: values.price.amount,
       },
     });
 
@@ -127,17 +128,18 @@ const OrderPrintButton = ({docs}: Props) => {
     }))
   }, [context.printers])
 
-  const initialValues = useMemo<Partial<FormValues>>(() => {
+  const initialValues = useMemo<Partial<OrderPrintFormValues>>(() => {
     const firstPrinter = context.printers[0];
-    const values: Partial<FormValues> = {
+    const values: Partial<OrderPrintFormValues> = {
       printFontPage: true,
+      price: new Money(),
     }
 
     if (firstPrinter) {
       values.printer = firstPrinter.id
     }
 
-    const accountingPositions: FormValues["accountingPositions"] = {}
+    const accountingPositions: OrderPrintFormValues["accountingPositions"] = {}
 
     for (const printer of context.printers) {
       const pos = printer.accountingPositions[0]
@@ -150,38 +152,63 @@ const OrderPrintButton = ({docs}: Props) => {
   }, [context.printers])
 
   return (
-    <Form<FormValues>
+    <Form<OrderPrintFormValues>
       onSubmit={onSubmit}
       initialValues={initialValues}
-      render={({ handleSubmit, submitting, submitError, values }) => (
+      render={({handleSubmit, submitting, submitError, values, submitSucceeded}) => (
         <form onSubmit={handleSubmit}>
-          <div className="modal-body vstack gap-3">
-            <TextField name="tag" label="Tag" isRequired/>
-            <SelectField name="printer" label="Printer" options={printerOptions} />
-            <SelectAccountingPositionField
-              name={`accountingPositions.${values.printer}`}
-              label="Payment method"
-              selectedPrinterId={values.printer}
-            />
-            <MoneyField name="donation" label="Donation" minorDigits={context.currency.minorDigits}/>
-            {submitError && <div className="text-danger">{submitError}</div>}
-            <div>
-              The final amount due is{" "}
-              <b>
-                <PriceTag
-                  docs={docs}
-                  numOralExamDeposits={0}
-                  resultFormFieldName="price"
-                  donation={parseFloat(values.donation?.replace(",", ".") || "0")}
+          {!submitSucceeded ? (
+            <>
+              <div className="modal-body vstack gap-3">
+                <TextField name="tag" label="Tag" isRequired/>
+                <SelectField name="printer" label="Printer" options={printerOptions}/>
+                <SelectAccountingPositionField
+                  name={`accountingPositions.${values.printer}`}
+                  label="Payment method"
+                  selectedPrinterId={values.printer}
                 />
-              </b>.
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              Print
-            </button>
-          </div>
+                <MoneyField name="donation" label="Donation" minorDigits={context.currency.minorDigits}/>
+                {submitError && <div className="text-danger">{submitError}</div>}
+                <div>
+                  The final amount due is{" "}
+                  <b>
+                    <PriceTag
+                      docs={docs}
+                      numOralExamDeposits={docs.length}
+                      donation={parseFloat(values.donation?.replace(",", ".") || "0")}
+                      storePriceInField
+                    />
+                  </b>.
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  Print
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="modal-body vstack gap-2">
+                <div>
+                  Job submitted! The printer should start printing momentarily.
+                  Please make sure to file the payment of{" "}
+                  <PriceTag
+                    docs={docs}
+                    numOralExamDeposits={docs.length}
+                    donation={parseFloat(values.donation?.replace(",", ".") || "0")}
+                    storePriceInField
+                  />
+                  .
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-primary" onClick={closeModal}>
+                  Close
+                </button>
+              </div>
+            </>
+          )}
         </form>
       )}
     />

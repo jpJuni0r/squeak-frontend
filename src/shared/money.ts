@@ -1,6 +1,6 @@
 export default class Money {
   constructor(
-    readonly amount: number
+    readonly amount: number = 0
   ) {
   }
 

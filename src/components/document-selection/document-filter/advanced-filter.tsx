@@ -1,4 +1,4 @@
-import React, {Dispatch, SetStateAction, useCallback, useState} from "react"
+import React, {useState} from "react"
 import {Plus} from "react-bootstrap-icons";
 import {DocumentFilter} from "@/model/generated/graphql";
 import AdvancedFilterModal from "@/components/document-selection/document-filter/advanced-filter-modal";
