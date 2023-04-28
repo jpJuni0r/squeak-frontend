@@ -57,7 +57,7 @@ const OrdersListContainer = ({ setSelectedDocuments }: Props) => {
 
   return (
     <OrdersListComponent
-      orders={data!.orders || previousData!.orders}
+      orders={data?.orders || previousData!.orders}
       setSelectedDocuments={setSelectedDocuments}
       setFilters={setFilters}
     />

@@ -68,7 +68,9 @@ const OrdersListComponent = ({orders, setFilters, setSelectedDocuments}: Props) 
     return {
       order: orders.results.length ? orders.results[0].id : undefined,
     }
-  }, [orders])
+    // We only want to set the initial value once, because the orders change when searching
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <Form<FormValues>
