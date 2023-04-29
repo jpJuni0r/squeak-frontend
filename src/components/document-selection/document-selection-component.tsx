@@ -1,9 +1,10 @@
-import React, {useCallback, useState} from "react"
+import React, {useEffect} from "react"
 import {DocumentsQuery, Examiner, Lecture} from "@/model/generated/graphql";
 import DocumentsListContainer from "@/components/document-selection/documents-list/documents-list";
 import Cart from "@/components/document-selection/cart/cart";
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
-import {useDocumentsFilter} from "@/hooks/documents";
+import {useDocumentsFilter} from "@/hooks/documents-filter";
+import {useDocumentsSelection} from "@/hooks/documents-selection";
 
 interface Props {
   allLectures: Lecture[],
@@ -12,8 +13,28 @@ interface Props {
 
 const DocumentSelectionComponent = ({allLectures, allExaminers}: Props) => {
   const {combinedFilters, setFilters, setAdvancedFilters} = useDocumentsFilter()
-  const [selectedDocuments, setSelectedDocuments] = useState<DocumentsQuery["documents"]["results"]>([]);
-  const clearDocuments = useCallback(() => setSelectedDocuments([]), [setSelectedDocuments])
+  const [state, dispatch] = useDocumentsSelection<DocumentsQuery["documents"]["results"][0]>()
+
+  useEffect(() => {
+    const downListener = (e: KeyboardEvent) => {
+      if (e.key === "Shift") {
+        dispatch({ type: "shift_down"})
+      }
+    }
+    const upListener = (e: KeyboardEvent) => {
+      if (e.key === "Shift") {
+        dispatch({ type: "shift_up"})
+      }
+    }
+
+    document.addEventListener("keydown", downListener)
+    document.addEventListener("keyup", upListener)
+
+    return () => {
+      document.removeEventListener("keydown", downListener)
+      document.removeEventListener("keyup", upListener)
+    }
+  }, [dispatch])
 
   return (
     <div className="container-fluid">
@@ -28,15 +49,14 @@ const DocumentSelectionComponent = ({allLectures, allExaminers}: Props) => {
           <hr/>
           <DocumentsListContainer
             filters={combinedFilters}
-            selectedDocuments={selectedDocuments}
-            setSelectedDocuments={setSelectedDocuments}
+            documentSelectionState={state}
+            documentSelectionDispatcher={dispatch}
           />
         </div>
         <div className="col-md-4">
           <Cart
-            selectedDocuments={selectedDocuments}
-            setSelectedDocuments={setSelectedDocuments}
-            clearDocuments={clearDocuments}
+            documentSelectionState={state}
+            documentSelectionDispatcher={dispatch}
           />
         </div>
       </div>

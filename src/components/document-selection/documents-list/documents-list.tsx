@@ -1,14 +1,15 @@
-import React from "react"
+import React, {Dispatch, ReducerAction} from "react"
 import {DocumentFilter, DocumentsQuery} from "@/model/generated/graphql";
 import {gql} from "@/model/generated";
 import Spinner from "@/components/spinner/spinner";
 import DocumentsListComponent from "@/components/document-selection/documents-list/documents-list-component";
 import {useQuery} from "@apollo/client";
+import {DocumentSelectionState, documentsSelectionReducer} from "@/hooks/documents-selection";
 
 interface Props {
   filters: DocumentFilter[],
-  selectedDocuments: DocumentsQuery["documents"]["results"],
-  setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
+  documentSelectionState: DocumentSelectionState<DocumentsQuery["documents"]["results"][0]>,
+  documentSelectionDispatcher: Dispatch<ReducerAction<typeof documentsSelectionReducer>>
 }
 
 export const documentsQuery = gql(`
@@ -44,7 +45,7 @@ query documents($filters: [DocumentFilter!]!) {
 }
 `)
 
-const DocumentsListContainer = ({filters, selectedDocuments, setSelectedDocuments}: Props) => {
+const DocumentsListContainer = ({filters, documentSelectionState, documentSelectionDispatcher}: Props) => {
   const { data, loading, error } = useQuery(documentsQuery, {
     variables: {
       filters,
@@ -59,8 +60,8 @@ const DocumentsListContainer = ({filters, selectedDocuments, setSelectedDocument
     return (
       <DocumentsListComponent
         documents={data!.documents}
-        selectedDocuments={selectedDocuments}
-        setSelectedDocuments={setSelectedDocuments}
+        documentSelectionState={documentSelectionState}
+        documentSelectionDispatcher={documentSelectionDispatcher}
       />
     )
   }

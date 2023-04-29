@@ -1,7 +1,7 @@
 import React from "react"
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
 import {Examiner, Lecture} from "@/model/generated/graphql";
-import {useDocumentsFilter} from "@/hooks/documents";
+import {useDocumentsFilter} from "@/hooks/documents-filter";
 import {DocumentsListContainer} from "@/components/admin/documents/documents-list/documents-list";
 
 

@@ -1,15 +1,24 @@
-import React from "react";
+import React, {Dispatch, ReducerAction, useEffect} from "react";
 import {DocumentsQuery} from "@/model/generated/graphql";
 import DocumentAttributeIcons from "@/components/document-selection/documents-list/document-attribute-icons";
 import CartButton from "@/components/document-selection/documents-list/cart-button";
+import {DocumentSelectionState, documentsSelectionReducer} from "@/hooks/documents-selection";
+import {doc} from "prettier";
 
 interface Props {
   documents: DocumentsQuery["documents"],
-  selectedDocuments: DocumentsQuery["documents"]["results"],
-  setSelectedDocuments: (documents: DocumentsQuery["documents"]["results"]) => void,
+  documentSelectionState: DocumentSelectionState<DocumentsQuery["documents"]["results"][0]>,
+  documentSelectionDispatcher: Dispatch<ReducerAction<typeof documentsSelectionReducer>>
 }
 
-const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocuments}: Props) => {
+const DocumentsListComponent = ({documents, documentSelectionState: state, documentSelectionDispatcher}: Props) => {
+  useEffect(() => {
+    documentSelectionDispatcher({
+      type: "set_documents_in_view",
+      documents: documents.results,
+    })
+  }, [documents, documentSelectionDispatcher])
+
   return (
     <>
       <table className="table table-sm documents-table">
@@ -26,7 +35,16 @@ const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocume
         </thead>
         <tbody>
         {documents.results.map((doc, index) => (
-          <tr key={doc.id}>
+          <tr
+            key={doc.id}
+            onMouseEnter={() => documentSelectionDispatcher({type: "mouse_enter", row: index})}
+            onMouseLeave={() => documentSelectionDispatcher({type: "mouse_leave", row: index})}
+            onClick={() => documentSelectionDispatcher({ type: "click_row", row: index })}
+            className={
+              state.shiftDown && state.highlightedRows[0] <= index && state.highlightedRows[1] >= index
+                ? "table-info"
+                : ""}
+          >
             <td className="text-end">{index + 1}</td>
             <td>
               <DocumentAttributeIcons document={doc}/>
@@ -40,8 +58,9 @@ const DocumentsListComponent = ({documents, selectedDocuments, setSelectedDocume
             <td>
               <CartButton
                 doc={doc}
-                selectedDocuments={selectedDocuments}
-                setSelectedDocuments={setSelectedDocuments}
+                documentSelectionState={state}
+                documentSelectionDispatcher={documentSelectionDispatcher}
+                row={index}
               />
             </td>
           </tr>
