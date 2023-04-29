@@ -17,7 +17,7 @@ const AdvancedFilterTag = ({ filter, remove }: Props) => {
   let label: string;
 
   const key = Object.keys(filter)
-    .filter(key => key != "clientId")
+    .filter(key => key !== "clientId")
     .find(key => {
       // @ts-ignore
       const value = filter[key]

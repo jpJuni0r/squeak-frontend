@@ -43,7 +43,7 @@ interface FormValues {
 }
 
 const OrderPickupForm = ({docs, closeModal}: Props) => {
-  const [order] = useMutation(orderMutation, {errorPolicy: "all"})
+  const [order] = useMutation(orderMutation)
 
   const onSubmit = async (values: FormValues) => {
     const res = await order({

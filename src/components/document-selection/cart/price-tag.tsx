@@ -6,6 +6,7 @@ import {SiteConfiguration, SiteConfigurationContext} from "@/context/site-config
 import {useForm} from "react-final-form";
 import Money from "@/shared/money";
 import {OrderPrintFormValues} from "@/components/document-selection/cart/order-print/order-print-form";
+import PriceTagValue from "@/components/document-selection/cart/price-tag-value";
 
 interface Props {
   docs: DocumentsQuery["documents"]["results"]
@@ -31,27 +32,6 @@ query price(
   )
 }
 `)
-
-function currencySignToCurrency(sign: string) {
-  switch (sign) {
-    case "€": return "EUR";
-    case "$": return "USD";
-    default:
-      throw new Error(`Received unknown currency sign: ${sign}`)
-  }
-}
-
-const moneyToText = (money: Money, siteConfiguration: SiteConfiguration) => {
-  // This uses the browsers locale to select a fraction separator
-  const formatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: currencySignToCurrency(siteConfiguration.currency.symbol),
-    minimumFractionDigits: siteConfiguration.currency.minorDigits,
-    maximumFractionDigits: siteConfiguration.currency.minorDigits,
-  })
-
-  return formatter.format(money.toMajorUnit())
-}
 
 const StorePriceInField = ({price}: {price: Money}) => {
   const form = useForm<OrderPrintFormValues>()
@@ -93,9 +73,7 @@ const PriceTag = ({ docs, numOralExamDeposits, donation, storePriceInField }: Pr
 
   return (
     <>
-      <span className="price-tag">
-        {moneyToText(amount, siteConfiguration)}
-      </span>
+      <PriceTagValue amount={amount} />
       {storePriceInField && (
         <StorePriceInField price={amount}/>
       )}

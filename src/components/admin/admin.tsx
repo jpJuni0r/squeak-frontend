@@ -5,6 +5,7 @@ import LecturesListContainer from "@/components/admin/lecture/lectures-list-cont
 import ExaminersListContainer from "@/components/admin/examiner/examiners-list-container";
 import DocumentsAdminContainer from "@/components/admin/documents/documents-admin-container";
 import FacultiesListContainer from "@/components/admin/faculty/faculties-list-container";
+import DocumentUploadsContainer from "@/components/admin/document-uploads/document-uploads-container";
 
 const Admin = () => {
   const router = useRouter()
@@ -19,6 +20,7 @@ const Admin = () => {
     <div className="container mt-1 vstack gap-2">
       <AdminTabs />
       {tab === SettingsTabOption.DOCUMENTS && <DocumentsAdminContainer />}
+      {tab === SettingsTabOption.DOCUMENT_UPLOADS && <DocumentUploadsContainer />}
       {tab === SettingsTabOption.LECTURES && <LecturesListContainer />}
       {tab === SettingsTabOption.EXAMINERS && <ExaminersListContainer />}
       {tab === SettingsTabOption.FACULTIES && <FacultiesListContainer />}

@@ -50,7 +50,7 @@ interface FormValues {
 
 const DocumentEditAttachmentButton = ({doc, refetch}: Props) => {
   const [showModal, setShowModal] = useState(false)
-  const [updateDocumentFile] = useMutation(updateDocumentFileMutation, {errorPolicy: "all"})
+  const [updateDocumentFile] = useMutation(updateDocumentFileMutation)
 
   const onSubmit = async (values: FormValues) => {
     const response = await updateDocumentFile({

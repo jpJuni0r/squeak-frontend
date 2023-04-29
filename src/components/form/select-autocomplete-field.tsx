@@ -7,16 +7,18 @@ interface Props<FieldValue> {
   name: string;
   label: string;
   options: FieldValue[];
+  defaultValue?: FieldValue
   isMulti?: boolean;
   isRequired?: boolean;
 }
 
-const SelectAutocompleteField = <FieldValue extends SelectOption,>({ name, label, options, isMulti, isRequired }: Props<FieldValue>) => {
+const SelectAutocompleteField = <FieldValue extends SelectOption,>({ name, label, options, defaultValue, isMulti, isRequired }: Props<FieldValue>) => {
   return (
     <Field<FieldValue>
       name={name}
       type="select"
       multiple={isMulti}
+      defaultValue={defaultValue}
       validate={(x, fields) => {
         const value = (fields as any)[name]
         if (isMulti) {

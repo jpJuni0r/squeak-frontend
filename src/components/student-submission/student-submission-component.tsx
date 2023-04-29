@@ -122,9 +122,9 @@ interface Props {
 }
 
 const StudentSubmissionComponent = ({lectures, examiners, faculties}: Props) => {
-  const [createUploadForTag] = useMutation(createUploadForTagMutation, {errorPolicy: "all"})
-  const [createUnvalidatedLecture] = useMutation(createUnvalidatedLectureMutation, {errorPolicy: "all"})
-  const [createUnvalidatedExaminer] = useMutation(createUnvalidatedExaminerMutation, {errorPolicy: "all"})
+  const [createUploadForTag] = useMutation(createUploadForTagMutation)
+  const [createUnvalidatedLecture] = useMutation(createUnvalidatedLectureMutation)
+  const [createUnvalidatedExaminer] = useMutation(createUnvalidatedExaminerMutation)
   const [rewardAvailable, setRewardAvailable] = useState<null | string>(null)
 
   const onSubmit = async (values: FormValues) => {
@@ -334,7 +334,6 @@ const StudentSubmissionComponent = ({lectures, examiners, faculties}: Props) => 
                 {submitError &&
                     <div className="text-danger">{submitError}</div>
                 }
-                <pre>{JSON.stringify(values, null, 2)}</pre>
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
                   Submit
                 </button>

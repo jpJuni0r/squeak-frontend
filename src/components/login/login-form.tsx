@@ -36,7 +36,7 @@ interface FormValues {
 const LoginForm = () => {
   const router = useRouter()
 
-  const [login] = useMutation(loginMutation, {errorPolicy: "all"})
+  const [login] = useMutation(loginMutation)
   const processAuthentication = useProcessAuthentication()
 
   const onSubmit = async (values: FormValues) => {

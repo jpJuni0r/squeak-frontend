@@ -35,6 +35,17 @@ const MyApolloProvider = ({ children }: Props) => {
     return new ApolloClient({
       cache: new InMemoryCache(),
       link: authLink.concat(fileUploadLink),
+      defaultOptions: {
+        mutate: {
+          errorPolicy: "all",
+        },
+        query: {
+          fetchPolicy: "network-only",
+        },
+        watchQuery: {
+          fetchPolicy: "network-only",
+        },
+      },
     });
   }, [token])
 
