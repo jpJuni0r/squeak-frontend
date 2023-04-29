@@ -14,6 +14,10 @@ query studentSubmissionMeta {
     id
     displayName
   }
+  faculties {
+    id
+    displayName
+  }
 }
 `)
 
@@ -30,7 +34,11 @@ const StudentSubmission = () => {
           ) : error ? (
             <div className="text-danger">{error.message}</div>
           ) : (
-            <StudentSubmissionComponent examiners={data!.examiners} lectures={data!.lectures} />
+            <StudentSubmissionComponent
+              examiners={data!.examiners}
+              lectures={data!.lectures}
+              faculties={data!.faculties}
+            />
           )}
         </div>
       </div>

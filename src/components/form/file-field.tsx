@@ -4,9 +4,10 @@ import {Field} from "react-final-form";
 interface Props {
   name: string
   label: string
+  isRequired?: boolean
 }
 
-const FileField = ({name, label}: Props) => {
+const FileField = ({name, label, isRequired}: Props) => {
   return (
     <Field
       name={name}
@@ -18,6 +19,7 @@ const FileField = ({name, label}: Props) => {
             {...input}
             className="form-control"
             onChange={e => onChange(e.target.files)}
+            required={isRequired}
           />
         </div>
       )}

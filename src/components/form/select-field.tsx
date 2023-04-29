@@ -11,6 +11,9 @@ interface Props {
 export interface SelectOption {
   label: string;
   value: string;
+  // React select creatable may set this attribute to true, see
+  // https://github.com/JedWatson/react-select/blob/1bbbc47f5bdd3bd81f6b95ada5554cdb8578ced5/packages/react-select/src/useCreatable.ts#L101
+  __isNew__?: true,
 }
 
 // field value is `{label: string, value: string}`
