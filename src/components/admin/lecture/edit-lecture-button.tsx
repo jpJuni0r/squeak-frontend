@@ -69,8 +69,8 @@ mutation updateLectureAliases(
 
 const EditLectureButton = ({ lecture, faculties, refresh}: Props) => {
   const [show, setShow] = useState(false)
-  const [updateLecture] = useMutation(updateLectureMutation)
-  const [updateLectureAliases] = useMutation(updateLectureAliasesMutation)
+  const [updateLecture] = useMutation(updateLectureMutation, {errorPolicy: "all"})
+  const [updateLectureAliases] = useMutation(updateLectureAliasesMutation, {errorPolicy: "all"})
 
   const onSubmit: Config<LectureFormValues>["onSubmit"] = async (values) => {
     const lectureResponse = await updateLecture({variables: {

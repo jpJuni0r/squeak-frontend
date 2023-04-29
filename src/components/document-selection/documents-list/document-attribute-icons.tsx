@@ -1,6 +1,6 @@
 import React from "react"
 import {DocumentsQuery} from "@/model/generated/graphql";
-import {Chat, FileEarmarkFont, Pencil, Star} from 'react-bootstrap-icons';
+import {Chat, FileEarmarkFont, Pencil, Star, X} from 'react-bootstrap-icons';
 
 interface Props {
   document: DocumentsQuery["documents"]["results"][0],

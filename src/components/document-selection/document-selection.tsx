@@ -6,8 +6,10 @@ import DocumentSelectionComponent from "@/components/document-selection/document
 
 // This query is shared with the admin panel
 export const filterMetaQuery = gql(`
-query filterMeta {
-  examiners {
+query filterMeta(
+  $validated: Boolean
+) {
+  examiners(validated: $validated) {
     id
     name
     validated
@@ -15,7 +17,7 @@ query filterMeta {
     institute
     displayName
   }
-  lectures {
+  lectures(validated: $validated) {
     id
     displayName
     validated
@@ -31,7 +33,11 @@ query filterMeta {
 `)
 
 const DocumentSelectionContainer = () => {
-  const { data, loading, error } = useQuery(filterMetaQuery)
+  const { data, loading, error } = useQuery(filterMetaQuery, {
+    variables: {
+      validated: true,
+    }
+  })
 
   if (loading) {
     return <Spinner />

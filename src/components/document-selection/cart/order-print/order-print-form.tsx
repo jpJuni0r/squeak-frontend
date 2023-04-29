@@ -80,7 +80,7 @@ export interface OrderPrintFormValues {
 
 const OrderPrintButton = ({docs, closeModal}: Props) => {
   const context = useContext(SiteConfigurationContext)
-  const [print] = useMutation(printDocumentsMutation, {errorPolicy: "none"})
+  const [print] = useMutation(printDocumentsMutation, {errorPolicy: "all"})
 
   const onSubmit = async (values: OrderPrintFormValues) => {
     const donation = Money.fromMajorUnit(parseFloat(values.donation?.replace(",", ".") || "0"))

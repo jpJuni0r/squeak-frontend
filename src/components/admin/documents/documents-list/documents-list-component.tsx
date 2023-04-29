@@ -2,6 +2,8 @@ import React from "react"
 import {AdminDocumentsQuery} from "@/model/generated/graphql";
 import DocumentAttributeIcons from "@/components/document-selection/documents-list/document-attribute-icons";
 import DocumentEditButton from "@/components/admin/documents/documents-list/document-edit-button";
+import DocumentEditAttachmentButton
+  from "@/components/admin/documents/documents-list/document-edit-attachment-button";
 
 interface Props {
   documents: AdminDocumentsQuery["documents"],
@@ -43,7 +45,10 @@ const DocumentsListComponents = ({documents, refetch}: Props) => {
               {doc.publicComment}
             </td>
             <td>
-              <DocumentEditButton doc={doc} refetch={refetch} />
+              <div className="hstack gap-1">
+                <DocumentEditAttachmentButton doc={doc} refetch={refetch} />
+                <DocumentEditButton doc={doc} refetch={refetch} />
+              </div>
             </td>
           </tr>
         ))}

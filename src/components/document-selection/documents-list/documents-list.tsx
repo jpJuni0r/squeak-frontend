@@ -26,6 +26,7 @@ query documents($filters: [DocumentFilter!]!) {
       downloadable
       rating
       numPages
+      validated
       examiners {
         id
         name
@@ -42,8 +43,7 @@ query documents($filters: [DocumentFilter!]!) {
     cursor
     totalAvailable
   }
-}
-`)
+}`)
 
 const DocumentsListContainer = ({filters, documentSelectionState, documentSelectionDispatcher}: Props) => {
   const { data, loading, error } = useQuery(documentsQuery, {

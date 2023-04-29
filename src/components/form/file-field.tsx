@@ -14,7 +14,10 @@ const FileField = ({name, label, isRequired}: Props) => {
       type="file"
       render={({ input: { value, onChange, ...input} }) => (
         <div>
-          <label htmlFor={input.name}>{label}</label>
+          <label htmlFor={input.name}>
+            {label}
+            {isRequired && <span className="text-danger">*</span>}
+          </label>
           <input
             {...input}
             className="form-control"

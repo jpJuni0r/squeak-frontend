@@ -122,9 +122,9 @@ interface Props {
 }
 
 const StudentSubmissionComponent = ({lectures, examiners, faculties}: Props) => {
-  const [createUploadForTag] = useMutation(createUploadForTagMutation, {errorPolicy: "none"})
-  const [createUnvalidatedLecture] = useMutation(createUnvalidatedLectureMutation, {errorPolicy: "none"})
-  const [createUnvalidatedExaminer] = useMutation(createUnvalidatedExaminerMutation, {errorPolicy: "none"})
+  const [createUploadForTag] = useMutation(createUploadForTagMutation, {errorPolicy: "all"})
+  const [createUnvalidatedLecture] = useMutation(createUnvalidatedLectureMutation, {errorPolicy: "all"})
+  const [createUnvalidatedExaminer] = useMutation(createUnvalidatedExaminerMutation, {errorPolicy: "all"})
   const [rewardAvailable, setRewardAvailable] = useState<null | string>(null)
 
   const onSubmit = async (values: FormValues) => {

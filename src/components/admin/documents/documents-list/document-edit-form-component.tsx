@@ -78,7 +78,7 @@ interface FormValues {
 }
 
 const DocumentEditFormComponent = ({doc, lectures, examiners, refetchAndCloseModal}: Props) => {
-  const [updateDocument] = useMutation(updateDocumentMutation, {errorPolicy: "none"})
+  const [updateDocument] = useMutation(updateDocumentMutation, {errorPolicy: "all"})
 
   const onSubmit = async (values: FormValues) => {
     const data: DocumentUpdateInput = {

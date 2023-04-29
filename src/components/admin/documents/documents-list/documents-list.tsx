@@ -24,6 +24,8 @@ query adminDocuments($filters: [DocumentFilter!]!) {
       downloadable
       rating
       numPages
+      validated
+      file
       examiners {
         id
         name
