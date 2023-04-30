@@ -30,7 +30,7 @@ const DocumentsListComponents = ({documents, refetch}: Props) => {
         {documents.results.map(doc => (
           <tr key={doc.id}>
             <td>
-              <DocumentAttributeIcons document={doc}/>
+              <DocumentAttributeIcons document={doc} unvalidated={!doc.validated}/>
             </td>
             <td>
               {doc.lectures.map(lecture => lecture.displayName).join(", ")}
@@ -45,7 +45,7 @@ const DocumentsListComponents = ({documents, refetch}: Props) => {
               {doc.publicComment}
             </td>
             <td>
-              <div className="hstack gap-1">
+              <div className="hstack gap-1 justify-content-end">
                 <DocumentEditAttachmentButton doc={doc} refetch={refetch} />
                 <DocumentEditButton doc={doc} refetch={refetch} />
               </div>

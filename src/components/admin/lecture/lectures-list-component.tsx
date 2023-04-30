@@ -1,10 +1,13 @@
 import React from "react"
-import {Faculty, Lecture} from "@/model/generated/graphql";
+import {Faculty, Lecture, LecturesQuery} from "@/model/generated/graphql";
 import AddLectureButton from "@/components/admin/lecture/add-lecture-button";
 import EditLectureButton from "@/components/admin/lecture/edit-lecture-button";
+import LectureValidateButton from "@/components/admin/lecture/lecture-validate-button";
+import {Hourglass} from "react-bootstrap-icons";
+import DeleteLectureButton from "@/components/admin/lecture/delete-lecture-button";
 
 interface Props {
-  lectures: Lecture[]
+  lectures: LecturesQuery["lectures"]
   faculties: Faculty[]
   refresh: () => void;
 }
@@ -30,7 +33,11 @@ const LecturesListComponent = ({lectures, faculties, refresh}: Props) => {
                 </small>
               )}
             </div>
-            <div>
+            <div className="hstack gap-1">
+              {!lecture.validated && (
+                <LectureValidateButton lecture={lecture} refresh={refresh}/>
+              )}
+              <DeleteLectureButton lecture={lecture} refresh={refresh} />
               <EditLectureButton lecture={lecture} faculties={faculties} refresh={refresh} />
             </div>
           </li>

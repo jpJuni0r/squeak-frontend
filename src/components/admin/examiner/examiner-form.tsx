@@ -8,7 +8,7 @@ import CheckboxField from "@/components/form/checkbox-field";
 interface Props {
   onSubmit: Config<ExaminerFormValues>["onSubmit"]
   initialValues?: Partial<ExaminerFormValues>
-  // This is an extra option, because the validated field is not editable
+  // This is an extra option, because the validated field is not editable here
   hideValidatedField?: boolean;
 }
 

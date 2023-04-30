@@ -2,6 +2,7 @@ import React from "react";
 import SelectCreatable from "react-select/creatable";
 import { Field } from "react-final-form";
 import {SelectOption} from "@/components/form/select-field";
+import {isQualifiedTypeIdentifier} from "@babel/types";
 
 interface Props<FieldValue> {
   name: string;
@@ -18,8 +19,10 @@ const SelectCreatableField = <FieldValue extends SelectOption,>({ name, label, o
       multiple
       validate={(x, fields) => {
         const value = (fields as any)[name]
-        if (!value || !value.length) {
-          return "Value is required"
+        if (isRequired) {
+          if (!value || !value.length) {
+            return "Value is required"
+          }
         }
         return null
       }}

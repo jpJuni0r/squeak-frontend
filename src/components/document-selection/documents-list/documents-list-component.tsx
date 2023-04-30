@@ -47,7 +47,7 @@ const DocumentsListComponent = ({documents, documentSelectionState: state, docum
           >
             <td className="text-end">{index + 1}</td>
             <td>
-              <DocumentAttributeIcons document={doc}/>
+              <DocumentAttributeIcons document={doc} unvalidated={!doc.validated}/>
             </td>
             <td>
               {doc.lectures.map(lecture => lecture.displayName).join(", ")}

@@ -87,7 +87,7 @@ const PayoutDepositButton = ({upload, refetch}: Props) => {
         <Eject/>
       </button>
       <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>Payout deposit</Modal.Title>
         </Modal.Header>
         <Form<FormValues>

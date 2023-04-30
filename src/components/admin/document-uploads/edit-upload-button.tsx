@@ -101,7 +101,7 @@ const EditUploadButton = ({upload}: Props) => {
         <Pencil/>
       </button>
       <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>Edit Upload</Modal.Title>
         </Modal.Header>
         <Form

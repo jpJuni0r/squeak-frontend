@@ -18,7 +18,7 @@ const PrefillCartButton = ({ documentSelectionDispatcher }: Props) => {
         <Download/>
       </button>
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>
             Fill cart from order
           </Modal.Title>

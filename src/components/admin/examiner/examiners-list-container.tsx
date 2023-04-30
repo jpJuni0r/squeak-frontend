@@ -5,19 +5,29 @@ import Spinner from "@/components/spinner/spinner";
 import ExaminersListComponent from "@/components/admin/examiner/examiners-list-component";
 
 const examinersQuery = gql(`
-query examiners {
-  examiners {
+query examiners(
+  $validated: Boolean
+) {
+  examiners(
+    validated: $validated
+  ) {
     id
     name
     validated
     displayName
+    name
+    prename
     institute 
   }
 }
 `)
 
 const ExaminersListContainer = () => {
-  const { data, loading, error, refetch } = useQuery(examinersQuery)
+  const { data, loading, error, refetch } = useQuery(examinersQuery, {
+    variables: {
+      validated: null,
+    },
+  })
 
   if (loading) {
     return <Spinner />

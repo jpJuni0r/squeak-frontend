@@ -95,7 +95,7 @@ const AdvancedFilterButton = ({addFilter}: Props) => {
         <Plus/> Add filter
       </button>
       <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>Add advanced filter</Modal.Title>
         </Modal.Header>
         <Form<FormValues>

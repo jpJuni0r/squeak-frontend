@@ -36,7 +36,7 @@ mutation createExaminer(
 `)
 
 const AddExaminerButton = ({refresh} : Props) => {
-  const [show, setShow] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [createExaminer] = useMutation(createExaminerMutation)
 
   const onSubmit: Config<ExaminerFormValues>["onSubmit"] = async (values) => {
@@ -65,16 +65,16 @@ const AddExaminerButton = ({refresh} : Props) => {
       }
     }
 
-    setShow(false)
+    setShowModal(false)
     refresh()
   }
 
   return (
     <>
-      <button type="button" className="btn btn-outline-primary" onClick={() => setShow(true)}>
+      <button type="button" className="btn btn-outline-primary" onClick={() => setShowModal(true)}>
         <Plus/> Add Examiner
       </button>
-      <Modal show={show} onHide={() => setShow(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Add Examiner</Modal.Title>
         </Modal.Header>

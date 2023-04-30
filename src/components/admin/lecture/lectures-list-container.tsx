@@ -5,8 +5,12 @@ import Spinner from "@/components/spinner/spinner";
 import LecturesListComponent from "@/components/admin/lecture/lectures-list-component";
 
 const lecturesQuery = gql(`
-query lectures {
-  lectures {
+query lectures(
+  $validated: Boolean
+) {
+  lectures(
+    validated: $validated
+  ) {
     id
     displayName
     validated
@@ -26,7 +30,11 @@ query lectures {
 `)
 
 const LecturesListContainer = () => {
-  const { data, loading, error, refetch } = useQuery(lecturesQuery)
+  const { data, loading, error, refetch } = useQuery(lecturesQuery, {
+    variables: {
+      validated: null,
+    },
+  })
 
   if (loading) {
     return <Spinner />
