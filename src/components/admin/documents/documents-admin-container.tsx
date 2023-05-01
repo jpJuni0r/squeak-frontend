@@ -21,6 +21,7 @@ const DocumentsAdminContainer = () =>  {
     <DocumentsAdminComponent
       allLectures={data!.lectures}
       allExaminers={data!.examiners}
+      faculties={data!.faculties}
     />
   )
 }

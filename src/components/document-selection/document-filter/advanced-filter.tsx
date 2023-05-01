@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import {Plus} from "react-bootstrap-icons";
-import {DocumentFilter} from "@/model/generated/graphql";
+import {DocumentFilter, FilterMetaQuery} from "@/model/generated/graphql";
 import AdvancedFilterModal from "@/components/document-selection/document-filter/advanced-filter-modal";
 import AdvancedFilterTag, {
   AdvancedFilterItem
@@ -8,9 +8,10 @@ import AdvancedFilterTag, {
 
 interface Props {
   setAdvancedFilters: (filters: DocumentFilter[]) => void
+  faculties: FilterMetaQuery["faculties"]
 }
 
-const AdvancedFilter = ({ setAdvancedFilters }: Props) => {
+const AdvancedFilter = ({ setAdvancedFilters, faculties }: Props) => {
   const [filters, setFilters] = useState<AdvancedFilterItem[]>([])
   const [show, setShow] = useState(false)
 
@@ -45,7 +46,7 @@ const AdvancedFilter = ({ setAdvancedFilters }: Props) => {
           <Plus /> Filter
         </button>
       </div>
-      <AdvancedFilterModal show={show} hideModal={hideModal}/>
+      <AdvancedFilterModal show={show} hideModal={hideModal} faculties={faculties}/>
     </div>
   )
 }

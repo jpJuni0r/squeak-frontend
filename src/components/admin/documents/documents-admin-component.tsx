@@ -1,16 +1,17 @@
 import React from "react"
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
-import {Examiner, Lecture} from "@/model/generated/graphql";
+import {Examiner, FilterMetaQuery, Lecture} from "@/model/generated/graphql";
 import {useDocumentsFilter} from "@/hooks/documents-filter";
 import {DocumentsListContainer} from "@/components/admin/documents/documents-list/documents-list";
 
 
 interface Props {
-  allLectures: Lecture[],
-  allExaminers: Examiner[],
+  allLectures: FilterMetaQuery["lectures"],
+  allExaminers: FilterMetaQuery["examiners"],
+  faculties: FilterMetaQuery["faculties"],
 }
 
-const DocumentsAdminComponent = ({allLectures, allExaminers}: Props) => {
+const DocumentsAdminComponent = ({allLectures, allExaminers, faculties}: Props) => {
   const {combinedFilters, setFilters, setAdvancedFilters} = useDocumentsFilter()
 
   return (
@@ -20,6 +21,7 @@ const DocumentsAdminComponent = ({allLectures, allExaminers}: Props) => {
         setAdvancedFilters={setAdvancedFilters}
         allExaminers={allExaminers}
         allLectures={allLectures}
+        faculties={faculties}
       />
       <DocumentsListContainer filters={combinedFilters} />
     </div>

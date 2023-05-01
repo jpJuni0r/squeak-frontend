@@ -1,128 +1,58 @@
 import React, {useMemo} from "react"
 import {Modal} from "react-bootstrap";
 import {Form} from "react-final-form";
-import {SelectOption} from "@/components/form/select-field";
-import {DocumentFilter, Rating} from "@/model/generated/graphql";
+import {
+  DocumentFilter,
+  DocumentType,
+  Faculty,
+  Rating,
+  RequestState,
+  SolutionType,
+  UploadState
+} from "@/model/generated/graphql";
 import SelectAutocompleteField from "@/components/form/select-autocomplete-field";
-import AdvancedFilterValue from "@/components/document-selection/document-filter/advanced-filter-value";
+import {SelectOption} from "@/components/form/select-field";
 import {
   documentTypeOptions,
   ratingOptions,
   requestStateOptions,
+  semesterOptions,
+  solutionTypeOptions,
   uploadStateOptions
 } from "@/shared/enum-select-options";
+import TextField from "@/components/form/text-field";
+import CheckboxField from "@/components/form/checkbox-field";
 
 interface Props {
   show: boolean;
+  faculties: Faculty[],
   hideModal: (filter?: DocumentFilter) => void;
 }
-
-type IgnoredKeys = "id" | "lectureIds" | "examinerIds"
-type Keys = Exclude<keyof DocumentFilter, IgnoredKeys>
-export type FieldSemantics =
-  | { kind: "plain", pattern?: string }
-  | { kind: "boolean" }
-  | { kind: "date" }
-  | { kind: "enum", options: SelectOption[] }
-  | { kind: "semester" }
 
 interface FilterSelectOption {
   label: string,
   value: string,
-  semantics: FieldSemantics,
 }
 
 interface FormValues {
   type: FilterSelectOption,
-  value?: any,
+  faculty: SelectOption,
+  examBefore: string,
+  examAfter: string,
+  semesterBefore: SelectOption,
+  semesterAfter: SelectOption,
+  publishedBefore: string,
+  publishedAfter: string,
+  rating: SelectOption[],
+  documentType: SelectOption[],
+  public?: boolean,
+  downloadable?: boolean
+  writtenSolutionType: SelectOption[],
+  uploadState: SelectOption[],
+  requestState: SelectOption[],
 }
 
-const semantics: { kind: Keys, semantics: FieldSemantics }[] = [
-  {
-    kind: "documentType",
-    semantics: {
-      kind: "enum",
-      options: documentTypeOptions,
-    },
-  },
-  {
-    kind: "downloadable",
-    semantics: {
-      kind: "boolean",
-    },
-  },
-  {
-    kind: "examAfter",
-    semantics: {
-      kind: "date",
-    },
-  },
-  {
-    kind: "examBefore",
-    semantics: {
-      kind: "date",
-    },
-  },
-  {
-    kind: "faculty",
-    semantics: {
-      kind: "plain",
-    },
-  },
-  {
-    kind: "public",
-    semantics: {
-      kind: "boolean",
-    },
-  },
-  {
-    kind: "publishedAfter",
-    semantics: {
-      kind: "date",
-    },
-  },
-  {
-    kind: "publishedBefore",
-    semantics: {
-      kind: "date",
-    },
-  },
-  {
-    kind: "rating",
-    semantics: {
-      kind: "enum",
-      options: ratingOptions,
-    },
-  },
-  {
-    kind: "requestState",
-    semantics: {
-      kind: "enum",
-      options: requestStateOptions,
-    },
-  },
-  {
-    kind: "semesterAfter",
-    semantics: {
-      kind: "semester"
-    },
-  },
-  {
-    kind: "semesterBefore",
-    semantics: {
-      kind: "semester"
-    },
-  },
-  {
-    kind: "uploadState",
-    semantics: {
-      kind: "enum",
-      options: uploadStateOptions,
-    },
-  },
-]
-
-export const keyToLabel = (key: Keys): string => {
+export const keyToLabel = (key: keyof DocumentFilter): string => {
   switch (key) {
     case "documentType":
       return "Document type"
@@ -157,53 +87,98 @@ export const keyToLabel = (key: Keys): string => {
   }
 }
 
-const AdvancedFilterModal = ({show, hideModal}: Props) => {
+const AdvancedFilterModal = ({show, faculties, hideModal}: Props) => {
   const onSubmit = (values: FormValues) => {
-    if (!values.value) {
-      return
-    }
-
     const filter: DocumentFilter = {}
 
     switch (values.type.value) {
-      case "down":
-    }
-
-    let value: any;
-
-    switch (values.type.semantics.kind) {
-      case "plain":
-      case "date":
-        value = values.value
+      case "faculty":
+        filter.faculty = values.faculty.value
         break;
-      case "enum":
-      case "semester":
-        value = values.value.value
-        break
-      case "boolean":
-        value = values.value === "yes"
-        break
-      default:
-        // @ts-ignore
-        throw new Error(`Unknown field semantic kind: ${values.type.semantics.kind}`)
+      case "examBefore":
+        filter.examBefore = values.examBefore!
+        break;
+      case "examAfter":
+        filter.examAfter = values.examAfter!
+        break;
+      case "semesterBefore":
+        filter.semesterBefore = values.semesterBefore.value
+        break;
+      case "semesterAfter":
+        filter.semesterAfter = values.semesterAfter.value
+        break;
+      case "publishedBefore":
+        filter.publishedBefore = values.publishedBefore!
+        break;
+      case "publishedAfter":
+        filter.publishedAfter = values.publishedAfter!
+        break;
+      case "rating":
+        filter.rating = values.rating.map(o => o.value as Rating)
+        break;
+      case "documentType":
+        filter.documentType = values.documentType.map(o => o.value as DocumentType)
+        break;
+      case "public":
+        filter.public = values.public || false
+        break;
+      case "downloadable":
+        filter.downloadable = values.downloadable
+        break;
+      case "writtenSolutionType":
+        filter.writtenSolutionType = values.writtenSolutionType.map(o => o.value as SolutionType)
+        break;
+      case "uploadState":
+        filter.uploadState = values.uploadState.map(o => o.value as UploadState)
+        break;
+      case "requestState":
+        filter.requestState = values.requestState.map(o => o.value as RequestState)
+        break;
     }
-
-    filter[values.type.value as keyof DocumentFilter] = value
 
     hideModal(filter)
   }
 
-  const options: FilterSelectOption[] = useMemo(() => {
-    return semantics.map(item => ({
-      label: keyToLabel(item.kind),
-      value: item.kind,
-      semantics: item.semantics,
+  const typeOptions: FilterSelectOption[] = useMemo(() => {
+    const keys: (keyof DocumentFilter)[] = [
+      "faculty",
+      "examBefore",
+      "examAfter",
+      "semesterBefore",
+      "semesterAfter",
+      "publishedBefore",
+      "publishedAfter",
+      "rating",
+      "documentType",
+      "public",
+      "downloadable",
+      "writtenSolutionType",
+      "uploadState",
+      "requestState",
+    ]
+
+    return keys.map(key => ({
+      label: keyToLabel(key),
+      value: key,
     }))
   }, [])
+  console.log(faculties)
 
-  const initialValues: FormValues = {
-    type: options[0],
-  }
+  const facultyOptions = useMemo(() =>
+    (faculties || []).map(f => ({label: f.displayName, value: f.id})),
+    [faculties])
+
+  const initialValues: Partial<FormValues> = useMemo(() => ({
+    faculty: facultyOptions[0],
+    type: typeOptions[0],
+    semesterBefore: semesterOptions[0],
+    semesterAfter: semesterOptions[0],
+    rating: [],
+    documentType: [],
+    writtenSolutionType: [],
+    uploadState: [],
+    requestState: [],
+  }), [facultyOptions, typeOptions])
 
   return (
     <Form<FormValues>
@@ -221,14 +196,62 @@ const AdvancedFilterModal = ({show, hideModal}: Props) => {
               <div className="vstack gap-3">
                 <SelectAutocompleteField
                   name="type"
-                  label="Variant"
-                  options={options}
+                  label="Type"
+                  options={typeOptions}
+                  isRequired
                 />
-                <AdvancedFilterValue name="value" semantics={values.type.semantics}/>
+                {values.type.value === "faculty" && (
+                  <SelectAutocompleteField name="faculty" label="Faculty" options={facultyOptions} isRequired/>
+                )}
+                {values.type.value === "examBefore" && (
+                  <TextField type="date" name="examBefore" label="Exam before" isRequired/>
+                )}
+                {values.type.value === "examAfter" && (
+                  <TextField type="date" name="examAfter" label="Exam after" isRequired/>
+                )}
+                {values.type.value === "semesterBefore" && (
+                  <SelectAutocompleteField name="semesterBefore" label="Semester before" options={semesterOptions}
+                                           isRequired/>
+                )}
+                {values.type.value === "semesterAfter" && (
+                  <SelectAutocompleteField name="semesterAfter" label="Semester after" options={semesterOptions}
+                                           isRequired/>
+                )}
+                {values.type.value === "publishedBefore" && (
+                  <TextField type="date" name="publishedBefore" label="Published before" isRequired/>
+                )}
+                {values.type.value === "publishedAfter" && (
+                  <TextField type="date" name="publishedAfter" label="Published after" isRequired/>
+                )}
+                {values.type.value === "rating" && (
+                  <SelectAutocompleteField name="rating" label="Rating" options={ratingOptions} isMulti isRequired/>
+                )}
+                {values.type.value === "documentType" && (
+                  <SelectAutocompleteField name="documentType" label="Document type" options={documentTypeOptions}
+                                           isMulti isRequired/>
+                )}
+                {values.type.value === "public" && (
+                  <CheckboxField name="public" label="Public"/>
+                )}
+                {values.type.value === "downloadable" && (
+                  <CheckboxField name="downloadable" label="Downloadable"/>
+                )}
+                {values.type.value === "writtenSolutionType" && (
+                  <SelectAutocompleteField name="writtenSolutionType" label="Written solution type"
+                                           options={solutionTypeOptions} isMulti isRequired/>
+                )}
+                {values.type.value === "uploadState" && (
+                  <SelectAutocompleteField name="uploadState" label="Upload state" options={uploadStateOptions} isMulti
+                                           isRequired/>
+                )}
+                {values.type.value === "requestState" && (
+                  <SelectAutocompleteField name="requestState" label="Request state" options={requestStateOptions}
+                                           isMulti isRequired/>
+                )}
               </div>
             </Modal.Body>
             <Modal.Footer>
-              <button type="submit" className="btn btn-primary">Add</button>
+              <button type="submit" className="btn btn-primary">Submit</button>
             </Modal.Footer>
           </form>
         </Modal>

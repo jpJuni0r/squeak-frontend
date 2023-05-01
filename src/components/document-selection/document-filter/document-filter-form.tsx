@@ -1,18 +1,17 @@
-import React, {Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
-import {Form} from "react-final-form";
-import {FormState} from "final-form";
-import {DocumentFilter, Examiner, Lecture} from "@/model/generated/graphql";
+import React, {useCallback} from "react"
+import {DocumentFilter, Examiner, FilterMetaQuery, Lecture} from "@/model/generated/graphql";
 import SearchField from "@/components/document-selection/document-filter/search-field";
 import AdvancedFilter from "@/components/document-selection/document-filter/advanced-filter";
 
 interface Props {
-  setFilters: (filters: DocumentFilter[]) => void
-  setAdvancedFilters: (filters: DocumentFilter[]) => void
-  allExaminers: Examiner[];
-  allLectures: Lecture[];
+  setFilters: (filters: DocumentFilter[]) => void;
+  setAdvancedFilters: (filters: DocumentFilter[]) => void;
+  allExaminers: FilterMetaQuery["examiners"];
+  allLectures: FilterMetaQuery["lectures"];
+  faculties: FilterMetaQuery["faculties"];
 }
 
-const DocumentFilterForm = ({ setFilters, setAdvancedFilters, allExaminers, allLectures} : Props) => {
+const DocumentFilterForm = ({ setFilters, setAdvancedFilters, allExaminers, allLectures, faculties} : Props) => {
   const setSearchSelection = useCallback((searchSelection: (Lecture|Examiner)[]) => {
       const filters: DocumentFilter[] = []
       const examiners = searchSelection.filter(o => o.__typename === "Examiner")
@@ -35,7 +34,7 @@ const DocumentFilterForm = ({ setFilters, setAdvancedFilters, allExaminers, allL
   return (
     <div className="vstack gap-1">
       <SearchField allExaminers={allExaminers} allLectures={allLectures} onChange={setSearchSelection} />
-      <AdvancedFilter setAdvancedFilters={setAdvancedFilters} />
+      <AdvancedFilter setAdvancedFilters={setAdvancedFilters} faculties={faculties} />
     </div>
   )
 }

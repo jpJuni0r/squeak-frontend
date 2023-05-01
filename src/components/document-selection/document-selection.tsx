@@ -29,6 +29,10 @@ query filterMeta(
     }
     availableRewards
   }
+  faculties {
+    id
+    displayName
+  }
 }
 `)
 
@@ -45,7 +49,11 @@ const DocumentSelectionContainer = () => {
     return <div className="text-danger">{error.message}</div>
   }
 
-  return <DocumentSelectionComponent allLectures={data!.lectures} allExaminers={data!.examiners} />
+  return <DocumentSelectionComponent
+    allLectures={data!.lectures}
+    allExaminers={data!.examiners}
+    faculties={data!.faculties}
+  />
 }
 
 export default DocumentSelectionContainer
