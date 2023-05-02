@@ -118,7 +118,7 @@ const OrderPrintButton = ({docs, closeModal}: Props) => {
     }
 
     // TODO: Store transaction data
-    console.log(response.data!.printDocuments.transactions)
+    // console.log(response.data!.printDocuments.transactions)
   }
 
   const printerOptions = useMemo(() => {

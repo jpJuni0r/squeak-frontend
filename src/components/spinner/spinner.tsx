@@ -14,7 +14,7 @@ const Spinner = ({ delay }: Props) => {
     const timeout = setTimeout(() => setVisible(true), delay === undefined ? DEFAULT_DELAY : delay);
 
     return () => clearTimeout(timeout);
-  }, [setVisible]);
+  }, [setVisible, delay]);
 
   return (
     <>

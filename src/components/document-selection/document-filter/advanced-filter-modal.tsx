@@ -162,7 +162,6 @@ const AdvancedFilterModal = ({show, faculties, hideModal}: Props) => {
       value: key,
     }))
   }, [])
-  console.log(faculties)
 
   const facultyOptions = useMemo(() =>
     (faculties || []).map(f => ({label: f.displayName, value: f.id})),
