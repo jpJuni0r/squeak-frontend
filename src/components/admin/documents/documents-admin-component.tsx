@@ -1,8 +1,8 @@
 import React from "react"
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
-import {Examiner, FilterMetaQuery, Lecture} from "@/model/generated/graphql";
-import {useDocumentsFilter} from "@/hooks/documents-filter";
+import {DocumentFilter, FilterMetaQuery} from "@/model/generated/graphql";
 import {DocumentsListContainer} from "@/components/admin/documents/documents-list/documents-list";
+import {useFilters} from "@/hooks/filters";
 
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const DocumentsAdminComponent = ({allLectures, allExaminers, faculties}: Props) => {
-  const {combinedFilters, setFilters, setAdvancedFilters} = useDocumentsFilter()
+  const {combinedFilters, setFilters, setAdvancedFilters} = useFilters<DocumentFilter>()
 
   return (
     <div className="vstack gap-3">

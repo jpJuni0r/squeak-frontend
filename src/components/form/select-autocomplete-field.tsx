@@ -2,6 +2,7 @@ import React from "react";
 import Select from "react-select";
 import { Field } from "react-final-form";
 import {SelectOption} from "@/components/form/select-field";
+import {isQualifiedTypeIdentifier} from "@babel/types";
 
 interface Props<FieldValue> {
   name: string;
@@ -20,6 +21,9 @@ const SelectAutocompleteField = <FieldValue extends SelectOption,>({ name, label
       multiple={isMulti}
       defaultValue={defaultValue}
       validate={(x, fields) => {
+        if (!isRequired)  {
+          return null
+        }
         const value = (fields as any)[name]
         if (isMulti) {
           if (!value || !value.length) {

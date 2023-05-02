@@ -1,9 +1,9 @@
 import React, {useEffect} from "react"
-import {DocumentsQuery, Examiner, FilterMetaQuery, Lecture} from "@/model/generated/graphql";
+import {DocumentFilter, DocumentsQuery, FilterMetaQuery} from "@/model/generated/graphql";
 import DocumentsListContainer from "@/components/document-selection/documents-list/documents-list";
 import Cart from "@/components/document-selection/cart/cart";
 import DocumentFilterForm from "@/components/document-selection/document-filter/document-filter-form";
-import {useDocumentsFilter} from "@/hooks/documents-filter";
+import {useFilters} from "@/hooks/filters";
 import {useDocumentsSelection} from "@/hooks/documents-selection";
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 }
 
 const DocumentSelectionComponent = ({allLectures, allExaminers, faculties}: Props) => {
-  const {combinedFilters, setFilters, setAdvancedFilters} = useDocumentsFilter()
+  const {combinedFilters, setFilters, setAdvancedFilters} = useFilters<DocumentFilter>()
   const [state, dispatch] = useDocumentsSelection<DocumentsQuery["documents"]["results"][0]>()
 
   useEffect(() => {

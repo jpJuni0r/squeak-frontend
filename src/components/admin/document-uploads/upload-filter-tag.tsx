@@ -8,7 +8,7 @@ interface Props {
 }
 
 export interface UploadFilterItem extends UploadFilter {
-  // this is a client-only field and required to render lists
+  // this is a client-only field and required to render lists in React
   clientId: number;
 }
 

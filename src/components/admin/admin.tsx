@@ -6,6 +6,7 @@ import ExaminersListContainer from "@/components/admin/examiner/examiners-list-c
 import DocumentsAdminContainer from "@/components/admin/documents/documents-admin-container";
 import FacultiesListContainer from "@/components/admin/faculty/faculties-list-container";
 import DocumentUploadsContainer from "@/components/admin/document-uploads/document-uploads-container";
+import DepositsContainer from "@/components/admin/deposits/deposits-container";
 
 const Admin = () => {
   const router = useRouter()
@@ -21,6 +22,7 @@ const Admin = () => {
       <AdminTabs />
       {tab === SettingsTabOption.DOCUMENTS && <DocumentsAdminContainer />}
       {tab === SettingsTabOption.DOCUMENT_UPLOADS && <DocumentUploadsContainer />}
+      {tab === SettingsTabOption.DEPOSITS && <DepositsContainer />}
       {tab === SettingsTabOption.LECTURES && <LecturesListContainer />}
       {tab === SettingsTabOption.EXAMINERS && <ExaminersListContainer />}
       {tab === SettingsTabOption.FACULTIES && <FacultiesListContainer />}

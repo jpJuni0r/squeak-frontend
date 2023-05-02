@@ -10,6 +10,7 @@ interface Tab {
 export enum SettingsTabOption {
   DOCUMENTS = "documents",
   DOCUMENT_UPLOADS = "documentUploads",
+  DEPOSITS = "deposits",
   LECTURES = "lectures",
   EXAMINERS = "examiners",
   FACULTIES = "faculties",
@@ -21,6 +22,9 @@ const tabs: Tab[] = [{
 }, {
   displayName: "Document Uploads",
   label: SettingsTabOption.DOCUMENT_UPLOADS,
+}, {
+  displayName: "Deposits",
+  label: SettingsTabOption.DEPOSITS,
 }, {
   displayName: "Lectures",
   label: SettingsTabOption.LECTURES,

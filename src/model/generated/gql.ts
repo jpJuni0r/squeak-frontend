@@ -13,6 +13,9 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
+    "\nmutation createDeposit(\n  $data: DepositInput!\n  $accountingPositionId: AccountingPositionId!\n) {\n  createDeposit(\n    data: $data\n    accountingPositionId: $accountingPositionId\n  ) {\n    ... on Transaction {\n      id\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n": types.CreateDepositDocument,
+    "\nquery deposits(\n  $filters: [DepositFilter!]!\n) {\n  deposits(filters: $filters) {\n    results {\n      id\n      tag\n      created\n      value\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n  }\n  lectures {\n    id\n    displayName\n  }\n}\n": types.DepositsDocument,
+    "\nmutation updateDeposit(\n  $depositId: DepositId!\n  $data: DepositUpdateInput!\n) {\n  updateDeposit(\n    depositId: $depositId\n    data: $data\n  ) {\n    ... on Deposit {\n      id\n      tag\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n": types.UpdateDepositDocument,
     "\nquery depositSelection(\n  $filters: [DepositFilter!]!\n) {\n  deposits(\n    filters: $filters\n  ) {\n    results {\n      id\n      tag\n      created\n      value\n      created\n    }\n  }\n}\n": types.DepositSelectionDocument,
     "\nquery uploads(\n  $filters: [UploadFilter!]!\n) {\n  uploads(\n    filters: $filters\n  ) {\n    results {\n      id\n      tag\n      state\n      created\n      deposit {\n        id\n        tag\n        value\n        comment\n      }\n      depositAvailable\n      rewardAvailable\n      document {\n        id\n        lectures {\n          id\n          displayName\n        }\n      }\n    }\n  }\n}\n": types.UploadsDocument,
     "\nmutation updateUploadStateMutation(\n  $uploadId: UploadId!\n  $uploadInput: UploadStateInput!\n  $public: Boolean\n) {\n  updateUploadState(\n    uploadId: $uploadId\n    uploadInput: $uploadInput\n    public: $public\n  ) {\n    ... on DocumentUpload {\n      id\n      state\n      depositAvailable\n      rewardAvailable\n      document {\n        id\n        public\n      }\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n": types.UpdateUploadStateMutationDocument,
@@ -63,6 +66,18 @@ const documents = {
  */
 export function gql(source: string): unknown;
 
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nmutation createDeposit(\n  $data: DepositInput!\n  $accountingPositionId: AccountingPositionId!\n) {\n  createDeposit(\n    data: $data\n    accountingPositionId: $accountingPositionId\n  ) {\n    ... on Transaction {\n      id\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"): (typeof documents)["\nmutation createDeposit(\n  $data: DepositInput!\n  $accountingPositionId: AccountingPositionId!\n) {\n  createDeposit(\n    data: $data\n    accountingPositionId: $accountingPositionId\n  ) {\n    ... on Transaction {\n      id\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nquery deposits(\n  $filters: [DepositFilter!]!\n) {\n  deposits(filters: $filters) {\n    results {\n      id\n      tag\n      created\n      value\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n  }\n  lectures {\n    id\n    displayName\n  }\n}\n"): (typeof documents)["\nquery deposits(\n  $filters: [DepositFilter!]!\n) {\n  deposits(filters: $filters) {\n    results {\n      id\n      tag\n      created\n      value\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n  }\n  lectures {\n    id\n    displayName\n  }\n}\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nmutation updateDeposit(\n  $depositId: DepositId!\n  $data: DepositUpdateInput!\n) {\n  updateDeposit(\n    depositId: $depositId\n    data: $data\n  ) {\n    ... on Deposit {\n      id\n      tag\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"): (typeof documents)["\nmutation updateDeposit(\n  $depositId: DepositId!\n  $data: DepositUpdateInput!\n) {\n  updateDeposit(\n    depositId: $depositId\n    data: $data\n  ) {\n    ... on Deposit {\n      id\n      tag\n      comment\n      lectures {\n        id\n        displayName\n      }\n    }\n    ... on Error {\n      msg\n    }\n  }\n}\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

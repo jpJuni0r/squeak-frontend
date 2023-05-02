@@ -4,7 +4,7 @@ import { FieldValidator } from "final-form";
 
 interface Props {
   name: string;
-  label: string;
+  label?: string;
   type?: "text" | "password" | "date" | "number" | "url";
   placeholder?: string;
   isRequired?: boolean;
