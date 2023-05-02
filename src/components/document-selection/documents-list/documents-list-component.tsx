@@ -3,7 +3,6 @@ import {DocumentsQuery} from "@/model/generated/graphql";
 import DocumentAttributeIcons from "@/components/document-selection/documents-list/document-attribute-icons";
 import CartButton from "@/components/document-selection/documents-list/cart-button";
 import {DocumentSelectionState, documentsSelectionReducer} from "@/hooks/documents-selection";
-import {doc} from "prettier";
 
 interface Props {
   documents: DocumentsQuery["documents"],

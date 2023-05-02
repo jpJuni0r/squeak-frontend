@@ -14,22 +14,15 @@ export interface AdvancedFilterItem extends DocumentFilter {
 }
 
 const AdvancedFilterTag = ({ filter, remove }: Props) => {
-  let label: string;
-
   const key = Object.keys(filter)
     .filter(key => key !== "clientId")
     .find(key => {
       // @ts-ignore
       const value = filter[key]
       return value !== null && value !== undefined
-    })
+    })!
 
-  if (key) {
-    // @ts-ignore
-    label = `${keyToLabel(key)}: ${filter[key]}`
-  } else {
-    label = "unknown"
-  }
+  const label = keyToLabel(key)
 
   const onClick: MouseEventHandler<unknown> = (event) => {
     event.preventDefault()

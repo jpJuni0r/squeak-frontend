@@ -52,7 +52,7 @@ interface FormValues {
   requestState: SelectOption[],
 }
 
-export const keyToLabel = (key: keyof DocumentFilter): string => {
+export const keyToLabel = (key: string): string => {
   switch (key) {
     case "documentType":
       return "Document type"
